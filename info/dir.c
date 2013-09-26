@@ -1,8 +1,8 @@
 /* dir.c -- how to build a special "dir" node from "localdir" files.
-   $Id: dir.c,v 1.8 2008/06/11 09:55:41 gray Exp $
+   $Id: dir.c 5337 2013-08-22 17:54:06Z karl $
 
-   Copyright (C) 1993, 1997, 1998, 2004, 2007, 
-   2008 Free Software Foundation, Inc.
+   Copyright 1993, 1997, 1998, 2004, 2007, 2008, 2009, 2012,
+   2013 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-  Written by Brian Fox (bfox@ai.mit.edu). */
+   Originally written by Brian Fox. */
 
 #include "info.h"
 #include "info-utils.h"
@@ -28,8 +28,8 @@
    with the addition of the menus of every file named in the array
    dirs_to_add which are found in INFOPATH. */
 
-static void add_menu_to_file_buffer (char *contents, long int size,
-    FILE_BUFFER *fb);
+static void add_menu_to_file_buffer (char *contents, size_t size,
+				     FILE_BUFFER *fb);
 static void insert_text_into_fb_at_binding (FILE_BUFFER *fb,
     SEARCH_BINDING *binding, char *text, int textlen);
 void maybe_build_dir_node (char *dirname);
@@ -40,7 +40,7 @@ static char *dirs_to_add[] = {
 
 
 /* Return zero if the file represented in the stat structure TEST has
-   already been seen, nonzero else.  */
+   already been seen, nonzero otherwise.  */
 
 typedef struct
 {
@@ -59,7 +59,10 @@ new_dir_file_p (struct stat *test)
     {
       dir_file_list_entry_type entry;
       entry = dir_file_list[i];
-      if (entry.device == test->st_dev && entry.inode == test->st_ino)
+      if (entry.device == test->st_dev && entry.inode == test->st_ino
+	  /* On MS-Windows, `stat' returns zero as the inode, so we
+	     effectively disable this optimization for that OS.  */
+	  && entry.inode != 0)
         return 0;
     }
   
@@ -92,14 +95,15 @@ maybe_build_dir_node (char *dirname)
      with the dir file just found.  */
   new_dir_file_p (&dir_buffer->finfo);
   
-  path_index = update_tags = 0;
+  update_tags = 0;
 
   /* Using each element of the path, check for one of the files in
      DIRS_TO_ADD.  Do not check for "localdir.info.Z" or anything else.
      Only files explictly named are eligible.  This is a design decision.
      There can be an info file name "localdir.info" which contains
      information on the setting up of "localdir" files. */
-  while ((this_dir = extract_colon_unit (infopath, &path_index)))
+  for (this_dir = infopath_first (&path_index); this_dir; 
+       this_dir = infopath_next (&path_index))
     {
       register int da_index;
       char *from_file;
@@ -136,7 +140,7 @@ maybe_build_dir_node (char *dirname)
           /* Only add this file if we have not seen it before.  */
           if (statable && S_ISREG (finfo.st_mode) && new_dir_file_p (&finfo))
             {
-              long filesize;
+              size_t filesize;
 	      int compressed;
               char *contents = filesys_read_info_file (fullpath, &filesize,
                                                        &finfo, &compressed);
@@ -164,7 +168,7 @@ maybe_build_dir_node (char *dirname)
    to the menu found in FB->contents.  Second argument SIZE is the total
    size of CONTENTS. */
 static void
-add_menu_to_file_buffer (char *contents, long int size, FILE_BUFFER *fb)
+add_menu_to_file_buffer (char *contents, size_t size, FILE_BUFFER *fb)
 {
   SEARCH_BINDING contents_binding, fb_binding;
   long contents_offset, fb_offset;
@@ -180,11 +184,9 @@ add_menu_to_file_buffer (char *contents, long int size, FILE_BUFFER *fb)
   fb_binding.flags = S_FoldCase | S_SkipDest;
 
   /* Move to the start of the menus in CONTENTS and FB. */
-  contents_offset = search_forward (INFO_MENU_LABEL, &contents_binding);
-  fb_offset = search_forward (INFO_MENU_LABEL, &fb_binding);
-
-  /* If there is no menu in CONTENTS, quit now. */
-  if (contents_offset == -1)
+  if (search_forward (INFO_MENU_LABEL, &contents_binding, &contents_offset)
+      != search_success)
+    /* If there is no menu in CONTENTS, quit now. */
     return;
 
   /* There is a menu in CONTENTS, and contents_offset points to the first
@@ -193,7 +195,8 @@ add_menu_to_file_buffer (char *contents, long int size, FILE_BUFFER *fb)
   contents_offset += skip_whitespace_and_newlines (contents + contents_offset);
 
   /* If there is no menu in FB, make one. */
-  if (fb_offset == -1)
+  if (search_forward (INFO_MENU_LABEL, &fb_binding, &fb_offset)
+      != search_success)
     {
       /* Find the start of the second node in this file buffer.  If there
          is only one node, we will be adding the contents to the end of
@@ -224,8 +227,8 @@ add_menu_to_file_buffer (char *contents, long int size, FILE_BUFFER *fb)
       fb_binding.buffer = fb->contents;
       fb_binding.start = 0;
       fb_binding.end = fb->filesize;
-      fb_offset = search_forward (INFO_MENU_LABEL, &fb_binding);
-      if (fb_offset == -1)
+      if (search_forward (INFO_MENU_LABEL, &fb_binding, &fb_offset)
+	  != search_success)
         abort ();
     }
 

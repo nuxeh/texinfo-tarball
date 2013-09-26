@@ -1,7 +1,7 @@
 /* indices.c -- deal with an Info file index.
-   $Id: indices.c,v 1.11 2008/06/11 09:55:42 gray Exp $
+   $Id: indices.c 5337 2013-08-22 17:54:06Z karl $
 
-   Copyright (C) 1993, 1997, 1998, 1999, 2002, 2003, 2004, 2007, 2008
+   Copyright 1993, 1997, 1998, 1999, 2002, 2003, 2004, 2007, 2008, 2011, 2013
    Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
@@ -17,10 +17,11 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-   Originally written by Brian Fox (bfox@ai.mit.edu). */
+   Originally written by Brian Fox. */
 
 #include "info.h"
 #include "indices.h"
+#include "variables.h"
 
 /* User-visible variable controls the output of info-index-next. */
 int show_index_match = 1;
@@ -31,6 +32,8 @@ static REFERENCE **index_index = NULL;
 
 /* The offset of the most recently selected index element. */
 static int index_offset = 0;
+/* Whether we are doing partial index search */
+static int index_partial = 0;
 
 /* Variable which holds the last string searched for. */
 static char *index_search = NULL;
@@ -48,8 +51,8 @@ typedef struct {
 
 /* An array associating index nodenames with index offset ranges. */
 static INDEX_NAME_ASSOC **index_nodenames = NULL;
-static int index_nodenames_index = 0;
-static int index_nodenames_slots = 0;
+static size_t index_nodenames_index = 0;
+static size_t index_nodenames_slots = 0;
 
 /* Add the name of NODE, and the range of the associated index elements
    (passed in ARRAY) to index_nodenames. */
@@ -74,9 +77,8 @@ add_index_to_index_nodenames (REFERENCE **array, NODE *node)
       assoc->first = 1 + index_nodenames[i]->last;
       assoc->last = assoc->first + last;
     }
-  add_pointer_to_array
-    (assoc, index_nodenames_index, index_nodenames, index_nodenames_slots,
-     10, INDEX_NAME_ASSOC *);
+  add_pointer_to_array (assoc, index_nodenames_index, index_nodenames, 
+                        index_nodenames_slots, 10);
 }
 
 /* Find and return the indices of WINDOW's file.  The indices are defined
@@ -105,8 +107,8 @@ info_indices_of_file_buffer (FILE_BUFFER *file_buffer)
     return NULL;
 
   /* Reset globals describing where the index was found. */
-  maybe_free (initial_index_filename);
-  maybe_free (initial_index_nodename);
+  free (initial_index_filename);
+  free (initial_index_nodename);
   initial_index_filename = NULL;
   initial_index_nodename = NULL;
 
@@ -135,7 +137,8 @@ info_indices_of_file_buffer (FILE_BUFFER *file_buffer)
               REFERENCE **menu;
 
               /* Found one.  Get its menu. */
-              node = info_get_node (tag->filename, tag->nodename);
+              node = info_get_node (tag->filename, tag->nodename, 
+                                    PARSE_NODE_VERBATIM);
               if (!node)
                 continue;
 
@@ -185,25 +188,25 @@ do_info_index_search (WINDOW *window, int count, char *search_string)
   index_offset = 0;
 
   /* The user is selecting a new search string, so flush the old one. */
-  maybe_free (index_search);
+  free (index_search);
   index_search = NULL;
 
   /* If this window's file is not the same as the one that we last built an
      index for, build and remember an index now. */
   fb = file_buffer_of_window (window);
   if (!initial_index_filename ||
+      !fb ||
       (FILENAME_CMP (initial_index_filename, fb->filename) != 0))
     {
       info_free_references (index_index);
-      window_message_in_echo_area (_("Finding index entries..."),
-          NULL, NULL);
+      window_message_in_echo_area (_("Finding index entries..."));
       index_index = info_indices_of_file_buffer (fb);
     }
 
   /* If there is no index, quit now. */
   if (!index_index)
     {
-      info_error (_("No indices found."), NULL, NULL);
+      info_error (_("No indices found."));
       return;
     }
 
@@ -234,7 +237,8 @@ do_info_index_search (WINDOW *window, int count, char *search_string)
               NODE *node;
 
               node = info_get_node (initial_index_filename,
-                                    initial_index_nodename);
+                                    initial_index_nodename,
+                                    PARSE_NODE_DFLT);
               set_remembered_pagetop_and_point (window);
               window_set_node_of_window (window, node);
               remember_window_and_node (window, node);
@@ -244,6 +248,14 @@ do_info_index_search (WINDOW *window, int count, char *search_string)
         }
     }
 
+  if (mbslen (line) < min_search_length)
+    {
+      info_error (_("Search string too short"));
+      free (line);
+      return;
+    }
+
+  
   /* The user typed either a completed index label, or a partial string.
      Find an exact match, or, failing that, the first index entry containing
      the partial string.  So, we just call info_next_index_match () with minor
@@ -259,8 +271,11 @@ do_info_index_search (WINDOW *window, int count, char *search_string)
         index_offset = i;
       }
     else
-      index_offset = -1;
-
+      {
+	index_offset = -1;
+	index_partial = 0;
+      }
+    
     old_offset = index_offset;
 
     /* The "last" string searched for is this one. */
@@ -287,8 +302,9 @@ index_entry_exists (WINDOW *window, char *string)
     return 0;
 
   fb = file_buffer_of_window (window);
-  if (!initial_index_filename
-      || (FILENAME_CMP (initial_index_filename, fb->filename) != 0))
+  if (!initial_index_filename ||
+      !fb ||
+      (FILENAME_CMP (initial_index_filename, fb->filename) != 0))
     {
       info_free_references (index_index);
       index_index = info_indices_of_file_buffer (fb);
@@ -320,25 +336,51 @@ index_entry_exists (WINDOW *window, char *string)
   return 1;
 }
 
+/* Return true if ENT->label matches "S( <[0-9]+>)?", where S stands
+   for the first LEN characters from STR. */
+static int
+index_entry_matches (REFERENCE *ent, const char *str, size_t len)
+{
+  char *p;
+  
+  if (strncmp (ent->label, str, len))
+    return 0;
+  p = ent->label + len;
+  if (!*p)
+    return 1;
+  if (p[0] == ' ' && p[1] == '<')
+    {
+      for (p += 2; *p; p++)
+	{
+	  if (p[0] == '>' && p[1] == 0)
+	    return 1;
+	  else if (!isdigit (*p))
+	    return 0;
+	}
+    }
+  return 0;
+}
+
 DECLARE_INFO_COMMAND (info_next_index_match,
  _("Go to the next matching index item from the last `\\[index-search]' command"))
 {
   register int i;
   int partial, dir;
   NODE *node;
-
+  size_t search_len;
+  
   /* If there is no previous search string, the user hasn't built an index
      yet. */
   if (!index_search)
     {
-      info_error (_("No previous index search string."), NULL, NULL);
+      info_error (_("No previous index search string."));
       return;
     }
 
   /* If there is no index, that is an error. */
   if (!index_index)
     {
-      info_error (_("No index entries."), NULL, NULL);
+      info_error (_("No index entries."));
       return;
     }
 
@@ -349,30 +391,47 @@ DECLARE_INFO_COMMAND (info_next_index_match,
   else
     dir = 1;
 
-  /* Search for the next occurence of index_search.  First try to find
-     an exact match. */
+  /* Search for the next occurence of index_search. */
   partial = 0;
+  search_len = strlen (index_search);
 
-  for (i = index_offset + dir; (i > -1) && (index_index[i]); i += dir)
-    if (strcmp (index_search, index_index[i]->label) == 0)
-      break;
-
-  /* If that failed, look for the next substring match. */
-  if ((i < 0) || (!index_index[i]))
+  if (!index_partial)
     {
+      /* First try to find an exact match. */
       for (i = index_offset + dir; (i > -1) && (index_index[i]); i += dir)
-        if (string_in_line (index_search, index_index[i]->label) != -1)
-          break;
+	if (index_entry_matches (index_index[i], index_search, search_len))
+	  break;
 
-      if ((i > -1) && (index_index[i]))
-        partial = string_in_line (index_search, index_index[i]->label);
+      /* If that failed, look for the next substring match. */
+      if ((i < 0) || (!index_index[i]))
+	{
+	  index_offset = 0;
+	  index_partial = 1;
+	}
     }
 
+  if (index_partial)
+    {
+      /* When looking for substrings, take care not to return previous exact
+	 matches. */
+      for (i = index_offset + dir; (i > -1) && (index_index[i]); i += dir)
+        if (!index_entry_matches (index_index[i], index_search, search_len))
+	  {
+	    partial = string_in_line (index_search, index_index[i]->label);
+	    if (partial != -1)
+	      break;
+	  }
+      index_partial = partial > 0;
+    }
+  
   /* If that failed, print an error. */
   if ((i < 0) || (!index_index[i]))
     {
-      info_error (_("No %sindex entries containing `%s'."),
-                  index_offset > 0 ? (char *) _("more ") : "", index_search);
+      info_error (index_offset > 0 ?
+		  _("No more index entries containing `%s'.") :
+		  _("No index entries containing `%s'."),
+		  index_search);
+      index_offset = 0;
       return;
     }
 
@@ -399,7 +458,7 @@ DECLARE_INFO_COMMAND (info_next_index_match,
        string matched. */
     match = xstrdup (index_index[i]->label);
 
-    if (partial && show_index_match)
+    if (partial > 0 && show_index_match)
       {
         int k, ls, start, upper;
 
@@ -428,7 +487,8 @@ DECLARE_INFO_COMMAND (info_next_index_match,
   }
 
   /* Select the node corresponding to this index entry. */
-  node = info_get_node (index_index[i]->filename, index_index[i]->nodename);
+  node = info_get_node (index_index[i]->filename, index_index[i]->nodename,
+                        PARSE_NODE_DFLT);
 
   if (!node)
     {
@@ -441,7 +501,8 @@ DECLARE_INFO_COMMAND (info_next_index_match,
 
   {
     long loc;
-    long line = index_index[i]->line_number - 1;
+    long line = window_log_to_phys_line (window,
+					 index_index[i]->line_number - 1);
 
     if (line >= 0 && line < window->line_count)
       {
@@ -452,7 +513,7 @@ DECLARE_INFO_COMMAND (info_next_index_match,
       {
 	/* Try to find an occurence of LABEL in this node. */
 	long start = window->line_starts[1] - window->node->contents;
-	loc = info_target_search_node (node, index_index[i]->label, start);
+	loc = info_target_search_node (node, index_index[i]->label, start, 1);
       }
 
     if (loc != -1)
@@ -474,12 +535,12 @@ DECLARE_INFO_COMMAND (info_next_index_match,
 REFERENCE **
 apropos_in_all_indices (char *search_string, int inform)
 {
-  register int i, dir_index;
+  size_t i, dir_index;
   REFERENCE **all_indices = NULL;
   REFERENCE **dir_menu = NULL;
   NODE *dir_node;
 
-  dir_node = info_get_node ("dir", "Top");
+  dir_node = info_get_node ("dir", "Top", PARSE_NODE_DFLT);
   if (dir_node)
     dir_menu = info_menu_of_node (dir_node);
 
@@ -509,11 +570,12 @@ apropos_in_all_indices (char *search_string, int inform)
 
       /* Find this node.  If we cannot find it, try using the label of the
          entry as a file (i.e., "(LABEL)Top"). */
-      this_node = info_get_node (this_item->filename, this_item->nodename);
+      this_node = info_get_node (this_item->filename, this_item->nodename,
+                                 PARSE_NODE_VERBATIM);
 
       if (!this_node && this_item->nodename &&
           (strcmp (this_item->label, this_item->nodename) == 0))
-        this_node = info_get_node (this_item->label, "Top");
+        this_node = info_get_node (this_item->label, "Top", PARSE_NODE_DFLT);
 
       if (!this_node)
 	{
@@ -546,8 +608,7 @@ apropos_in_all_indices (char *search_string, int inform)
 	  }
 
         if (this_fb && inform)
-          message_in_echo_area (_("Scanning indices of `%s'..."),
-              files_name, NULL);
+          message_in_echo_area (_("Scanning indices of `%s'..."), files_name);
 
         this_index = info_indices_of_file_buffer (this_fb);
         free (this_node);
@@ -574,24 +635,18 @@ apropos_in_all_indices (char *search_string, int inform)
   if (all_indices)
     {
       REFERENCE *entry, **apropos_list = NULL;
-      int apropos_list_index = 0;
-      int apropos_list_slots = 0;
+      size_t apropos_list_index = 0;
+      size_t apropos_list_slots = 0;
 
       for (i = 0; (entry = all_indices[i]); i++)
         {
           if (string_in_line (search_string, entry->label) != -1)
             {
-              add_pointer_to_array
-                (entry, apropos_list_index, apropos_list, apropos_list_slots,
-                 100, REFERENCE *);
+              add_pointer_to_array (entry, apropos_list_index, apropos_list, 
+                                    apropos_list_slots, 100);
             }
           else
-            {
-              maybe_free (entry->label);
-              maybe_free (entry->filename);
-              maybe_free (entry->nodename);
-              free (entry);
-            }
+            info_reference_free (entry);
         }
 
       free (all_indices);
@@ -611,7 +666,7 @@ info_apropos (char *string)
   apropos_list = apropos_in_all_indices (string, 0);
 
   if (!apropos_list)
-    info_error (_(APROPOS_NONE), string, NULL);
+    info_error (_(APROPOS_NONE), string);
   else
     {
       register int i;
@@ -651,7 +706,7 @@ DECLARE_INFO_COMMAND (info_index_apropos,
       apropos_list = apropos_in_all_indices (line, 1);
 
       if (!apropos_list)
-        info_error (_(APROPOS_NONE), line, NULL);
+        info_error (_(APROPOS_NONE), line);
       else
         {
           register int i;
@@ -660,7 +715,7 @@ DECLARE_INFO_COMMAND (info_index_apropos,
           initialize_message_buffer ();
           printf_to_message_buffer
             (_("\n* Menu: Nodes whose indices contain `%s':\n"),
-             line, NULL, NULL);
+             line);
           line_buffer = xmalloc (500);
 
           for (i = 0; apropos_list[i]; i++)
@@ -674,7 +729,7 @@ DECLARE_INFO_COMMAND (info_index_apropos,
               len = pad_to (40, line_buffer);
               sprintf (line_buffer + len, "(%s)%s.",
                        apropos_list[i]->filename, apropos_list[i]->nodename);
-              printf_to_message_buffer ("%s\n", line_buffer, NULL, NULL);
+              printf_to_message_buffer ("%s\n", line_buffer);
             }
           free (line_buffer);
         }
@@ -737,6 +792,216 @@ DECLARE_INFO_COMMAND (info_index_apropos,
       info_free_references (apropos_list);
     }
   free (line);
+
+  if (!info_error_was_printed)
+    window_clear_echo_area ();
+}
+
+static FILE_BUFFER *
+create_virtindex_file_buffer (const char *filename, char *contents, size_t size)
+{
+  FILE_BUFFER *file_buffer;
+
+  file_buffer = make_file_buffer ();
+  file_buffer->filename = filename ? xstrdup (filename) : NULL;
+  file_buffer->fullpath = filename ? xstrdup (filename) : NULL;
+  file_buffer->finfo.st_size = 0;
+  file_buffer->flags = (N_IsInternal | N_CannotGC);
+
+  file_buffer->contents = contents;
+  file_buffer->filesize = size;
+  build_tags_and_nodes (file_buffer);
+  return file_buffer;
+}
+
+static NODE *
+create_virtindex_node (FILE_BUFFER *file_buffer)
+{
+  NODE *node;
+  TAG *tag = file_buffer->tags[0];
+  char *text = file_buffer->contents + tag->nodestart;
+
+  text += skip_node_separator (text);
+  
+  node = xmalloc (sizeof (NODE));
+  node->filename = file_buffer->filename;
+  node->nodename = xstrdup (tag->nodename);
+  node->contents = text;
+  node->nodelen = strlen (text);
+  node->body_start = strcspn(node->contents, "\n");
+
+  node->flags    = 0;
+  node->display_pos = 0;
+  node->parent = NULL;
+  node->flags = 0;
+  
+  return node;
+}
+
+#define NODECOL 41
+#define LINECOL 62
+
+static void
+format_reference (REFERENCE *ref, const char *filename, struct text_buffer *buf)
+{
+  size_t n;
+  
+  n = text_buffer_printf (buf, "* %s: ", ref->label);
+  if (n < NODECOL)
+    n += text_buffer_fill (buf, ' ', NODECOL - n);
+  
+  if (ref->filename && strcmp (ref->filename, filename))
+    n += text_buffer_printf (buf, "(%s)", ref->filename);
+  n += text_buffer_printf (buf, "%s. ", ref->nodename);
+
+  if (n < LINECOL)
+    n += text_buffer_fill (buf, ' ', LINECOL - n);
+  else
+    {
+      text_buffer_add_char (buf, '\n');
+      text_buffer_fill (buf, ' ', LINECOL);
+    }
+  
+  text_buffer_printf (buf, "(line %4d)\n", ref->line_number);
+}
+
+DECLARE_INFO_COMMAND (info_virtual_index,
+   _("List all matches of a string in the index"))
+{
+  char *line;
+  FILE_BUFFER *fb, *tfb;
+  NODE *node;
+  struct text_buffer text;
+  size_t i;
+  size_t cnt, off;
+  
+  fb = file_buffer_of_window (window);
+
+  if (!initial_index_filename ||
+      !fb ||
+      (FILENAME_CMP (initial_index_filename, fb->filename) != 0))
+    {
+      info_free_references (index_index);
+      window_message_in_echo_area (_("Finding index entries..."));
+      index_index = info_indices_of_file_buffer (fb);
+    }
+
+  if (!index_index)
+    {
+      info_error (_("No index"));
+      return;
+    }
+    
+  line = info_read_maybe_completing (window, _("Index topic: "),
+				     index_index);
+
+  /* User aborted? */
+  if (!line)
+    {
+      info_abort_key (window, 1, 1);
+      return;
+    }
+
+  if (mbslen (line) < min_search_length)
+    {
+      info_error (_("Search string too short"));
+      free (line);
+      return;
+    }
+  
+  text_buffer_init (&text);
+  text_buffer_printf (&text, _("Index for `%s'"), line);
+  text_buffer_add_char (&text, 0);
+  off = text.off;
+  text_buffer_printf (&text,
+		      "\n\n%c\n%s %s,  %s %s,  %s Top\n\n"
+		      "Info Virtual Index\n"
+		      "******************\n\n"
+		      "Index entries that match `%s':\n\n"
+		      "* Menu:\n\n",
+		      INFO_COOKIE,
+		      INFO_FILE_LABEL, fb->filename,
+		      INFO_NODE_LABEL, text.base,
+		      INFO_UP_LABEL, line);
+  memmove (text.base, text.base + off, text.off - off);
+  text.off -= off;
+
+  cnt = 0;
+  for (i = 0; index_index[i]; i++)
+    {
+      if (string_in_line (line, index_index[i]->label) != -1)
+	{
+	  format_reference (index_index[i], fb->filename, &text);
+	  cnt++;
+	}
+    }
+
+  if (cnt == 0)
+    {
+      text_buffer_free (&text);
+      info_error (_("No index entries containing `%s'."), line);
+      return;
+    }
+
+  tfb = create_virtindex_file_buffer (fb->filename, text.base, text.off);
+  node = create_virtindex_node (tfb);
+  
+  info_set_node_of_window (1, window, node);
+  
+  if (!info_error_was_printed)
+    window_clear_echo_area ();
+}
+
+static NODE *allfiles_node;
+
+NODE *
+allfiles_create_node (char *term, REFERENCE **fref)
+{
+  int i;
+  struct text_buffer text;
+  size_t off;
+  FILE_BUFFER *fb;
+  
+  text_buffer_init (&text);
+  text_buffer_printf (&text, _("File names matching `%s'"), term);
+  text_buffer_add_char (&text, 0);
+  off = text.off;
+
+  text_buffer_printf (&text,
+		      "\n\n%c\n%s %s\n\n"
+		      "Info File Index\n"
+		      "***************\n\n"
+		      "File names that match `%s':\n\n"
+		      "* Menu:\n\n",
+		      INFO_COOKIE,
+		      INFO_NODE_LABEL, text.base, term);
+
+  memmove (text.base, text.base + off, text.off - off);
+  text.off -= off;
+
+  for (i = 0; fref[i]; i++)
+    {
+      text_buffer_printf (&text, "* %4i: (%s)", i+1, fref[i]->filename);
+      if (fref[i]->nodename)
+	text_buffer_printf (&text, "%s", fref[i]->nodename);
+      text_buffer_printf (&text, ".\n");
+    }
+
+  fb = create_virtindex_file_buffer (NULL, text.base, text.off);
+  allfiles_node = create_virtindex_node (fb);
+
+  return allfiles_node;
+}
+
+DECLARE_INFO_COMMAND (info_all_files, _("Show all matching files"))
+{
+  if (!allfiles_node)
+    {
+      info_error (_("No file index"));
+      return;
+    }
+
+  info_set_node_of_window (1, window, allfiles_node);
 
   if (!info_error_was_printed)
     window_clear_echo_area ();

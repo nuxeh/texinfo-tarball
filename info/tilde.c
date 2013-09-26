@@ -1,8 +1,8 @@
 /* tilde.c -- tilde expansion code (~/foo := $HOME/foo).
-   $Id: tilde.c,v 1.8 2008/06/11 09:55:43 gray Exp $
+   $Id: tilde.c 5337 2013-08-22 17:54:06Z karl $
 
-   Copyright (C) 1988, 1989, 1990, 1991, 1992, 1993, 1996, 1998, 1999,
-   2002, 2004, 2006, 2007, 2008 Free Software Foundation, Inc.
+   Copyright 1988, 1989, 1990, 1991, 1992, 1993, 1996, 1998, 1999,
+   2002, 2004, 2006, 2007, 2008, 2012, 2013 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-   Written by Brian Fox (bfox@ai.mit.edu). */
+   Originally written by Brian Fox. */
 
 #include "info.h"
 #include "tilde.h"
@@ -174,7 +174,7 @@ tilde_expand (char *string)
 /* Do the work of tilde expansion on FILENAME.  FILENAME starts with a
    tilde.  If there is no expansion, call tilde_expansion_failure_hook. */
 char *
-tilde_expand_word (char *filename)
+tilde_expand_word (const char *filename)
 {
   char *dirname = filename ? xstrdup (filename) : NULL;
 
@@ -190,11 +190,15 @@ tilde_expand_word (char *filename)
              the password database. */
           if (!temp_home)
             {
+#ifndef __MINGW32__
               struct passwd *entry;
 
               entry = (struct passwd *) getpwuid (getuid ());
               if (entry)
                 temp_home = entry->pw_dir;
+#else
+	      temp_home = ".";
+#endif
             }
 
           temp_name = xmalloc (1 + strlen (&dirname[1])
@@ -210,7 +214,9 @@ tilde_expand_word (char *filename)
         }
       else
         {
+#ifndef __MINGW32__
           struct passwd *user_entry;
+#endif
           char *username = xmalloc (257);
           int i, c;
 
@@ -223,6 +229,7 @@ tilde_expand_word (char *filename)
             }
           username[i - 1] = 0;
 
+#ifndef __MINGW32__
           if (!(user_entry = (struct passwd *) getpwnam (username)))
             {
               /* If the calling program has a special syntax for
@@ -259,6 +266,24 @@ tilde_expand_word (char *filename)
 
           endpwent ();
           free (username);
+#else
+	  if (tilde_expansion_failure_hook)
+	    {
+	      char *expansion = (*tilde_expansion_failure_hook) (username);
+
+	      if (expansion)
+		{
+		  temp_name = xmalloc (1 + strlen (expansion)
+				       + strlen (&dirname[i]));
+		  strcpy (temp_name, expansion);
+		  strcat (temp_name, &dirname[i]);
+		  free (expansion);
+		}
+	    }
+	  free (dirname);
+	  dirname = xstrdup (temp_name);
+	  free (temp_name);
+#endif
         }
     }
   return dirname;
@@ -296,7 +321,7 @@ main (argc, argv)
       printf ("  --> %s\n", result);
       free (result);
     }
-  xexit (0);
+  exit (EXIT_SUCCESS);
 }
 
 static void memory_error_and_abort ();

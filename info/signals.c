@@ -1,7 +1,7 @@
 /* signals.c -- install and maintain signal handlers.
-   $Id: signals.c,v 1.10 2007/07/01 21:20:31 karl Exp $
+   $Id: signals.c 5337 2013-08-22 17:54:06Z karl $
 
-   Copyright (C) 1993, 1994, 1995, 1998, 2002, 2003, 2004, 2007
+   Copyright 1993, 1994, 1995, 1998, 2002, 2003, 2004, 2007, 2012, 2013
    Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
@@ -17,7 +17,7 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-   Originally written by Brian Fox (bfox@ai.mit.edu). */
+   Originally written by Brian Fox. */
 
 #include "info.h"
 #include "signals.h"
@@ -151,7 +151,7 @@ initialize_info_signal_handler (void)
 #endif
 }
 
-static void
+void
 redisplay_after_signal (void)
 {
   terminal_clear_screen ();
@@ -162,7 +162,7 @@ redisplay_after_signal (void)
   fflush (stdout);
 }
 
-static void
+void
 reset_info_window_sizes (void)
 {
   terminal_goto_xy (0, 0);

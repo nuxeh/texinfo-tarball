@@ -1,8 +1,9 @@
-/* install-info -- create Info directory entry(ies) for an Info file.
-   $Id: install-info.c,v 1.13 2008/05/18 16:54:02 karl Exp $
+/* install-info -- merge Info directory entries from an Info file.
+   $Id: install-info.c 5313 2013-08-15 16:07:06Z karl $
 
-   Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-   2005, 2007, 2008 Free Software Foundation, Inc.
+   Copyright 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
+   2005, 2007, 2008, 2009, 2010, 2011, 2012, 2013
+   Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -179,15 +180,15 @@ regex_t *psecreg = NULL;
 int remove_exactly = 0;
 
 /* Nonzero means that sections that don't have entries in them will be
-   deleted. */
+   deleted.  */
 int remove_empty_sections = 1;
 
-/* Nonzero means that new Info entries into the DIR file will go into all 
+/* Nonzero means that new Info entries into the DIR file go into all 
    sections that match with --section-regex or --section.  Zero means 
-   that new entries wil go into the first section that matches.*/
+   that new entries go into only the first section that matches.  */
 int add_entries_into_all_matching_sections = 1;
 
-/* Nonzero means we do not replace same-named info entries. */
+/* Nonzero means we do not replace same-named info entries.  */
 int keep_old_flag = 0;
 
 /* Nonzero means --test was specified, to inhibit updating the dir file.  */
@@ -203,33 +204,48 @@ int order_new_sections_alphabetically_flag = 1;
 
 /* Error message functions.  */
 
-/* Print error message.  S1 is printf control string, S2 and S3 args for it. */
-
-/* VARARGS1 */
 void
-error (const char *s1, const char *s2, const char *s3)
+vdiag (const char *fmt, const char *diagtype, va_list ap)
 {
   fprintf (stderr, "%s: ", progname);
-  fprintf (stderr, s1, s2, s3);
+  if (diagtype)
+    fprintf (stderr, "%s: ", diagtype);
+  vfprintf (stderr, fmt, ap);
   putc ('\n', stderr);
+}
+
+void
+error (const char *fmt, ...)
+{
+  va_list ap;
+
+  va_start (ap, fmt);
+  vdiag (fmt, NULL, ap);
+  va_end (ap);
 }
 
 /* VARARGS1 */
 void
-warning (const char *s1, const char *s2, const char *s3)
+warning (const char *fmt, ...)
 {
-  fprintf (stderr, _("%s: warning: "), progname);
-  fprintf (stderr, s1, s2, s3);
-  putc ('\n', stderr);
+  va_list ap;
+
+  va_start (ap, fmt);
+  vdiag (fmt, "warning", ap);
+  va_end (ap);
 }
 
 /* Print error message and exit.  */
 
 void
-fatal (const char *s1, const char *s2, const char *s3)
+fatal (const char *fmt, ...)
 {
-  error (s1, s2, s3);
-  xexit (1);
+  va_list ap;
+
+  va_start (ap, fmt);
+  vdiag (fmt, NULL, ap);
+  va_end (ap);
+  exit (EXIT_FAILURE);
 }
 
 /* Return a newly-allocated string
@@ -267,8 +283,7 @@ copy_string (const char *string, int size)
 void
 pfatal_with_name (const char *name)
 {
-  char *s = concat ("", strerror (errno), _(" for %s"));
-  fatal (s, name, 0);
+  fatal (_("%s for %s"), strerror (errno), name);
 }
 
 /* Compare the menu item names in LINE1 (line length LEN1)
@@ -400,9 +415,19 @@ strip_info_suffix (char *fname)
       len -= 3;
       ret[len] = 0;
     }
+  else if (len > 3 && FILENAME_CMP (ret + len - 3, ".xz") == 0)
+    {
+      len -= 3;
+      ret[len] = 0;
+    }
   else if (len > 4 && FILENAME_CMP (ret + len - 4, ".bz2") == 0)
     {
       len -= 4;
+      ret[len] = 0;
+    }
+  else if (len > 3 && FILENAME_CMP (ret + len - 3, ".lz") == 0)
+    {
+      len -= 3;
       ret[len] = 0;
     }
   else if (len > 5 && FILENAME_CMP (ret + len - 5, ".lzma") == 0)
@@ -499,7 +524,7 @@ suggest_asking_for_help (void)
 {
   fprintf (stderr, _("\tTry `%s --help' for a complete list of options.\n"),
            progname);
-  xexit (1);
+  exit (EXIT_FAILURE);
 }
 
 void
@@ -508,10 +533,18 @@ print_help (void)
   printf (_("Usage: %s [OPTION]... [INFO-FILE [DIR-FILE]]\n"), progname);
   puts ("");
   puts (_("Add or remove entries in INFO-FILE from the Info directory DIR-FILE."));
+  puts (_("INFO-FILE and DIR-FILE are required unless the --info-file\n\
+or --dir-file (or --info-dir) options are given, respectively."));
   puts ("");
 
   puts (_("\
 Options:\n\
+ --add-once          add only to first matching section, not all.\n\
+ --align=COL         start description of new entries at column COL.\n\
+ --calign=COL        format second and subsequent description lines to\n\
+                       start at column COL."));
+
+  puts (_("\
  --debug             report what is being done.\n\
  --delete            delete existing entries for INFO-FILE from DIR-FILE;\n\
                       don't insert any new entries.\n\
@@ -523,16 +556,13 @@ Options:\n\
  --dry-run           same as --test."));
 
   puts (_("\
- --entry=TEXT        insert TEXT as an Info directory entry.\n\
+ --entry=TEXT        insert TEXT as an Info directory entry,\n\
+                      overriding any corresponding entry from DIR-FILE.\n\
                       TEXT is written as an Info menu item line followed\n\
                        by zero or more extra lines starting with whitespace.\n\
                       If you specify more than one entry, all are added.\n\
                       If you don't specify any entries, they are determined\n\
-                       from information in the Info file itself.\n\
-                      When removing, TEXT specifies the entry to remove.\n\
-                      TEXT is only removed as a last resort, if the\n\
-                      entry as determined from the Info file is not present,\n\
-                      and the basename of the Info file isn't found either."));
+                       from information in the Info file itself."));
 
   puts (_("\
  --help              display this help and exit.\n\
@@ -540,7 +570,10 @@ Options:\n\
  --info-file=FILE    specify Info file to install in the directory;\n\
                       equivalent to using the INFO-FILE argument.\n\
  --item=TEXT         same as --entry=TEXT.\n\
- --keep-old          do not replace entries, or remove empty sections.\n\
+ --keep-old          do not replace entries, or remove empty sections."));
+
+  puts (_("\
+ --maxwidth, --max-width=COL  wrap description at column COL.\n\
  --menuentry=TEXT    same as --name=TEXT.\n\
  --name=TEXT         the name of the entry is TEXT; used with --description\n\
                       to become synonymous with the --entry option.\n\
@@ -597,7 +630,7 @@ ensure_dirfile_exists (char *dirfile)
           fprintf (f, _("This is the file .../info/dir, which contains the\n\
 topmost node of the Info hierarchy, called (dir)Top.\n\
 The first time you invoke Info you start off looking at this node.\n\
-\x1f\n\
+%c\n\
 %s\tThis is the top of the INFO tree\n\
 \n\
   This (the Directory node) gives a menu of major topics.\n\
@@ -609,19 +642,17 @@ The first time you invoke Info you start off looking at this node.\n\
   to select it.\n\
 \n\
 %s\n\
-"), "File: dir,\tNode: Top",  /* These keywords must not be translated.  */
-    "* Menu:"
-);
+"),         /* These keywords must not be translated:  */
+            '\x1f',  "File: dir,\tNode: Top",  "* Menu:"
+          );
           if (fclose (f) < 0)
             pfatal_with_name (dirfile);
         }
       else
         {
           /* Didn't exist, but couldn't open for writing.  */
-          fprintf (stderr,
-                   _("%s: could not read (%s) and could not create (%s)\n"),
-                   dirfile, readerr, strerror (errno));
-          xexit (1);
+	  fatal (_("%s: could not read (%s) and could not create (%s)"),
+		 dirfile, readerr, strerror (errno));
         }
     }
   else
@@ -636,7 +667,8 @@ The first time you invoke Info you start off looking at this node.\n\
    If we do open it, return the actual name of the file opened in
    OPENED_FILENAME and the compress program to use to (de)compress it in
    COMPRESSION_PROGRAM.  The compression program is determined by the
-   magic number, not the filename.  */
+   
+   MAGIC number, not the filename.  */
 
 FILE *
 open_possibly_compressed_file (char *filename,
@@ -659,6 +691,13 @@ open_possibly_compressed_file (char *filename,
     {
       *opened_filename = concat (filename, ".gz", "");
       f = fopen (*opened_filename, FOPEN_RBIN);
+    }
+  if (!f)
+    {
+      free (*opened_filename);
+      *opened_filename = concat (filename, ".xz", "");
+      f = fopen (*opened_filename, FOPEN_RBIN);
+    }
   if (!f)
     {
       free (*opened_filename);
@@ -667,42 +706,46 @@ open_possibly_compressed_file (char *filename,
     }
   if (!f)
     {
+      free (*opened_filename);
+      *opened_filename = concat (filename, ".lz", "");
+      f = fopen (*opened_filename, FOPEN_RBIN);
+    }
+  if (!f)
+    {
      free (*opened_filename);
      *opened_filename = concat (filename, ".lzma", "");
      f = fopen (*opened_filename, FOPEN_RBIN);
     }
-
 #ifdef __MSDOS__
-      if (!f)
-        {
-          free (*opened_filename);
-          *opened_filename = concat (filename, ".igz", "");
-          f = fopen (*opened_filename, FOPEN_RBIN);
-        }
-      if (!f)
-        {
-          free (*opened_filename);
-          *opened_filename = concat (filename, ".inz", "");
-          f = fopen (*opened_filename, FOPEN_RBIN);
-        }
-#endif
-      if (!f)
-        {
-          if (create_callback)
-            { /* That didn't work either.  Create the file if we can.  */
-              (*create_callback) (filename);
-
-              /* And try opening it again.  */
-              free (*opened_filename);
-              *opened_filename = filename;
-              f = fopen (*opened_filename, FOPEN_RBIN);
-              if (!f)
-                pfatal_with_name (filename);
-            }
-          else
-            pfatal_with_name (filename);
-        }
+  if (!f)
+    {
+      free (*opened_filename);
+      *opened_filename = concat (filename, ".igz", "");
+      f = fopen (*opened_filename, FOPEN_RBIN);
     }
+  if (!f)
+    {
+      free (*opened_filename);
+      *opened_filename = concat (filename, ".inz", "");
+      f = fopen (*opened_filename, FOPEN_RBIN);
+    }
+#endif /* __MSDOS__ */
+   if (!f)
+     {
+       if (create_callback)
+         { /* That didn't work either.  Create the file if we can.  */
+           (*create_callback) (filename);
+
+           /* And try opening it again.  */
+           free (*opened_filename);
+           *opened_filename = filename;
+           f = fopen (*opened_filename, FOPEN_RBIN);
+           if (!f)
+             pfatal_with_name (filename);
+         }
+       else
+         pfatal_with_name (filename);
+     }
 
   /* Read first few bytes of file rather than relying on the filename.
      If the file is shorter than this it can't be usable anyway.  */
@@ -712,7 +755,7 @@ open_possibly_compressed_file (char *filename,
       /* Empty files don't set errno, so we get something like
          "install-info: No error for foo", which is confusing.  */
       if (nread == 0)
-        fatal (_("%s: empty file"), *opened_filename, 0);
+        fatal (_("%s: empty file"), *opened_filename);
       pfatal_with_name (*opened_filename);
     }
 
@@ -727,18 +770,37 @@ open_possibly_compressed_file (char *filename,
 #else
     *compression_program = "gzip";
 #endif
+
+  else if (data[0] == '\xFD' && data[1] == '7' && data[2] == 'z'
+           && data[3] == 'X' && data[4] == 'Z' && data[5] == 0)
+#ifndef STRIP_DOT_EXE
+    *compression_program = "xz.exe";
+#else
+    *compression_program = "xz";
+#endif
+
   else if (data[0] == 'B' && data[1] == 'Z' && data[2] == 'h')
 #ifndef STRIP_DOT_EXE
     *compression_program = "bzip2.exe";
 #else
     *compression_program = "bzip2";
 #endif
+
   else if (data[0] == 'B' && data[1] == 'Z' && data[2] == '0')
 #ifndef STRIP_DOT_EXE
     *compression_program = "bzip.exe";
 #else
     *compression_program = "bzip";
 #endif
+
+  else if (data[0] == 0x4C && data[1] == 0x5A && data[2] == 0x49
+           && data[3] == 0x50 && data[4] == 1)		/* "LZIP" */
+#ifndef STRIP_DOT_EXE
+    *compression_program = "lzip.exe";
+#else
+    *compression_program = "lzip";
+#endif
+
     /* We (try to) match against old lzma format (which lacks proper
        header, two first matches), as well as the new format (last match).  */
   else if ((data[9] == 0x00 && data[10] == 0x00 && data[11] == 0x00
@@ -753,6 +815,7 @@ open_possibly_compressed_file (char *filename,
 #else
     *compression_program = "lzma";
 #endif
+
   else
     *compression_program = NULL;
 
@@ -863,7 +926,7 @@ output_dirfile (char *dirfile, int dir_nlines, struct line_data *dir_lines,
   if (!output)
     {
       perror (dirfile);
-      xexit (1);
+      exit (EXIT_FAILURE);
     }
 
   for (i = 0; i <= dir_nlines; i++)
@@ -1043,7 +1106,7 @@ parse_input (const struct line_data *lines, int nlines,
               reset_tail = 1;
 
               if (start_of_this_entry != 0)
-                fatal (_("START-INFO-DIR-ENTRY without matching END-INFO-DIR-ENTRY"), 0, 0);
+                fatal (_("START-INFO-DIR-ENTRY without matching END-INFO-DIR-ENTRY"));
               start_of_this_entry = lines[i + 1].start;
             }
           else if (start_of_this_entry)
@@ -1078,13 +1141,12 @@ parse_input (const struct line_data *lines, int nlines,
               else if (!strncmp ("END-INFO-DIR-ENTRY",
                                  lines[i].start, lines[i].size)
                        && sizeof ("END-INFO-DIR-ENTRY") - 1 == lines[i].size)
-                fatal (_("END-INFO-DIR-ENTRY without matching START-INFO-DIR-ENTRY"), 0, 0);
+                fatal (_("END-INFO-DIR-ENTRY without matching START-INFO-DIR-ENTRY"));
             }
         }
     }
   if (start_of_this_entry != 0)
-    fatal (_("START-INFO-DIR-ENTRY without matching END-INFO-DIR-ENTRY"),
-           0, 0);
+    fatal (_("START-INFO-DIR-ENTRY without matching END-INFO-DIR-ENTRY"));
 
   /* If we ignored the INFO-DIR-ENTRY directives, we need now go back
      and plug the names of all the sections we found into every
@@ -1757,7 +1819,7 @@ munge_old_style_debian_options (int argc, char **argv,
             err = argz_add (&argz, &argz_len, opt);
           free (opt); opt = NULL;
 
-          opt = xmalloc (strlen (regex) + sizeof ("--section="));
+          opt = xmalloc (strlen (title) + sizeof ("--section="));
           if (sprintf (opt, "--section=%s", title) == -1)
             err = 1;
           if (!err)
@@ -2028,7 +2090,7 @@ main (int argc, char *argv[])
         case 'h':
         case 'H':
           print_help ();
-          xexit (0);
+          exit (EXIT_SUCCESS);
 
         case 'i':
           if (infile)
@@ -2067,7 +2129,7 @@ main (int argc, char *argv[])
               {
                 warning 
                   (_("Extra regular expression specified, ignoring `%s'"),
-                   optarg, 0);
+                   optarg);
                 break;
               }
             psecreg = (regex_t *) xmalloc (sizeof (regex_t));
@@ -2079,7 +2141,7 @@ main (int argc, char *argv[])
                 char *errbuf = (char *) xmalloc (errbuf_size);
                 regerror (error, psecreg, errbuf, errbuf_size);
                 fatal (_("Error in regular expression `%s': %s"),
-                       optarg, errbuf);
+		       optarg, errbuf);
               };
           }
           break;
@@ -2102,8 +2164,8 @@ main (int argc, char *argv[])
 License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n\
 This is free software: you are free to change and redistribute it.\n\
 There is NO WARRANTY, to the extent permitted by law.\n"),
-              "2008");
-          xexit (0);
+              "2013");
+          exit (EXIT_SUCCESS);
 
         case 'W':
           {
@@ -2136,14 +2198,13 @@ There is NO WARRANTY, to the extent permitted by law.\n"),
       else if (dirfile == 0)
         dirfile = argv[optind];
       else
-        error (_("excess command line argument `%s'"), argv[optind], 0);
+        error (_("excess command line argument `%s'"), argv[optind]);
     }
 
   if (!infile)
-    fatal (_("No input file specified; try --help for more information."),
-           0, 0);
+    fatal (_("No input file specified; try --help for more information."));
   if (!dirfile)
-    fatal (_("No dir file specified; try --help for more information."), 0, 0);
+    fatal (_("No dir file specified; try --help for more information."));
 
   /* Now read in the Info dir file.  */
   if (debug_flag)
@@ -2285,8 +2346,8 @@ There is NO WARRANTY, to the extent permitted by law.\n"),
              problem for the maintainer), and there's no need to cause
              subsequent parts of `make install' to fail.  */
           if (!quiet_flag)
-            warning (_("no info dir entry in `%s'"), infile, 0);
-          xexit (0);
+            warning (_("no info dir entry in `%s'"), infile);
+          exit (EXIT_SUCCESS);
         }
 
       /* If the entries came from the command-line arguments, their
@@ -2533,7 +2594,7 @@ There is NO WARRANTY, to the extent permitted by law.\n"),
     }
 
   if (delete_flag && !something_deleted && !quiet_flag)
-    warning (_("no entries found for `%s'; nothing deleted"), infile, 0);
+    warning (_("no entries found for `%s'; nothing deleted"), infile);
 
   if (debug_flag)
     printf ("debug: writing dir file %s\n", opened_dirfilename);
@@ -2544,8 +2605,7 @@ There is NO WARRANTY, to the extent permitted by law.\n"),
                     n_entries_to_add, entries_to_add,
                     input_sections, compression_program);
 
-  xexit (0);
-  return 0; /* Avoid bogus warnings.  */
+  exit (EXIT_SUCCESS);
 }
 
 /* Divide the text at DATA (of SIZE bytes) into lines.

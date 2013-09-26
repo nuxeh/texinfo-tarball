@@ -1,8 +1,8 @@
-/*  man.c: How to read and format man files.
-    $Id: man.c,v 1.14 2008/06/28 08:09:32 gray Exp $
+/* man.c: How to read and format man files.
+   $Id: man.c 5337 2013-08-22 17:54:06Z karl $
 
-   Copyright (C) 1995, 1997, 1998, 1999, 2000, 2002, 2003, 2004, 2005, 
-   2007, 2008 Free Software Foundation, Inc.
+   Copyright 1995, 1997, 1998, 1999, 2000, 2002, 2003, 2004, 2005, 
+   2007, 2008, 2009, 2011, 2012, 2013 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -20,7 +20,9 @@
    Originally written by Brian Fox Thu May  4 09:17:52 1995. */
 
 #include "info.h"
+#ifndef __MINGW32__
 #include <sys/ioctl.h>
+#endif
 #include "signals.h"
 #if defined (HAVE_SYS_TIME_H)
 #include <sys/time.h>
@@ -60,7 +62,8 @@ static char *get_manpage_contents (char *pagename);
 NODE *
 make_manpage_node (char *pagename)
 {
-  return info_get_node (MANPAGE_FILE_BUFFER_NAME, pagename);
+  return info_get_node (MANPAGE_FILE_BUFFER_NAME, pagename,
+                        PARSE_NODE_VERBATIM);
 }
 
 NODE *
@@ -104,7 +107,8 @@ get_manpage_node (FILE_BUFFER *file_buffer, char *pagename)
 	     the feet of info_windows[] array.  Therefore, all the
 	     nodes on that list which are showing man pages have their
 	     contents member pointing into the blue.  Undo that harm.  */
-	  if (old_contents && oldsize && old_contents != file_buffer->contents)
+	  if (old_contents && oldsize && old_contents != file_buffer->contents
+	      && info_windows)
 	    {
 	      int iw;
 	      INFO_WINDOW *info_win;
@@ -292,7 +296,7 @@ get_manpage_contents (char *pagename)
   if (manpage_section)
     formatter_args[arg_index++] = manpage_section;
   else
-    formatter_args[arg_index++] = "-a";    
+    formatter_args[arg_index++] = "-a";
 
   formatter_args[arg_index++] = manpage_pagename;
   formatter_args[arg_index] = NULL;
@@ -331,23 +335,29 @@ get_manpage_contents (char *pagename)
       /* If we get here, we couldn't exec, so close out the pipe and
          exit. */
       close (pipes[1]);
-      xexit (0);
+      exit (EXIT_SUCCESS);
     }
 #else  /* !PIPE_USE_FORK */
   /* Cannot fork/exec, but can popen/pclose.  */
   {
     FILE *fpipe;
-    char *cmdline = xmalloc (strlen (formatter_args[0])
-			     + strlen (manpage_pagename)
-			     + (arg_index > 2 ? strlen (manpage_section) : 0)
- 			     + 3);
+    char *cmdline;
+    size_t cmdlen = 0;
     int save_stderr = dup (fileno (stderr));
     int fd_err = open (NULL_DEVICE, O_WRONLY, 0666);
+    int i;
+
+    for (i = 0; i < arg_index; i++)
+      cmdlen += strlen (formatter_args[i]);
+    /* Add-ons: 2 blanks, 2 quotes for the formatter program, 1
+       terminating null character.  */
+    cmdlen += 2 + 2 + 1;
+    cmdline = xmalloc (cmdlen);
 
     if (fd_err > 2)
       dup2 (fd_err, fileno (stderr)); /* Don't print errors. */
-    sprintf (cmdline, "%s %s %s", formatter_args[0], manpage_pagename,
-				  arg_index > 2 ? manpage_section : "");
+    sprintf (cmdline, "\"%s\" %s %s",
+	     formatter_args[0], formatter_args[1], formatter_args[2]);
     fpipe = popen (cmdline, "r");
     free (cmdline);
     if (fd_err > 2)
@@ -401,6 +411,7 @@ manpage_node_of_file_buffer (FILE_BUFFER *file_buffer, char *pagename)
       node->parent   = NULL;
       node->flags = (N_HasTagsTable | N_IsManPage);
       node->contents += skip_node_separator (node->contents);
+      node->body_start = strcspn(node->contents, "\n");
     }
 
   return node;
@@ -499,8 +510,8 @@ find_reference_section (NODE *node)
 
   for (i = 0; reference_section_starters[i] != NULL; i++)
     {
-      position = search_forward (reference_section_starters[i], &frs_binding);
-      if (position != -1)
+      if (search_forward (reference_section_starters[i], &frs_binding,
+			  &position) == search_success)
         break;
     }
 
@@ -530,8 +541,8 @@ xrefs_of_manpage (NODE *node)
 {
   SEARCH_BINDING *reference_section;
   REFERENCE **refs = NULL;
-  int refs_index = 0;
-  int refs_slots = 0;
+  size_t refs_index = 0;
+  size_t refs_slots = 0;
   long position;
 
   reference_section = find_reference_section (node);
@@ -544,7 +555,7 @@ xrefs_of_manpage (NODE *node)
      within parenthesis. */
   reference_section->flags = 0;
 
-  while ((position = search_forward ("(", reference_section)) != -1)
+  while (search_forward ("(", reference_section, &position) == search_success)
     {
       register int start, end;
 
@@ -583,8 +594,7 @@ xrefs_of_manpage (NODE *node)
           entry->start = start;
           entry->end = end;
 
-          add_pointer_to_array
-            (entry, refs_index, refs, refs_slots, 10, REFERENCE *);
+          add_pointer_to_array (entry, refs_index, refs, refs_slots, 10);
         }
 
       reference_section->start = position + 1;
@@ -643,12 +653,12 @@ locate_manpage_xref (NODE *node, long int start, int dir)
 REFERENCE **
 manpage_xrefs_in_binding (NODE *node, SEARCH_BINDING *binding)
 {
-  register int i;
+  size_t i;
   REFERENCE **all_refs = xrefs_of_manpage (node);
   REFERENCE **brefs = NULL;
   REFERENCE *entry;
-  int brefs_index = 0;
-  int brefs_slots = 0;
+  size_t brefs_index = 0;
+  size_t brefs_slots = 0;
   int start, end;
 
   if (!all_refs)
@@ -660,17 +670,9 @@ manpage_xrefs_in_binding (NODE *node, SEARCH_BINDING *binding)
   for (i = 0; (entry = all_refs[i]); i++)
     {
       if ((entry->start > start) && (entry->end < end))
-        {
-          add_pointer_to_array
-            (entry, brefs_index, brefs, brefs_slots, 10, REFERENCE *);
-        }
+        add_pointer_to_array (entry, brefs_index, brefs, brefs_slots, 10);
       else
-        {
-          maybe_free (entry->label);
-          maybe_free (entry->filename);
-          maybe_free (entry->nodename);
-          free (entry);
-        }
+        info_reference_free (entry);
     }
 
   free (all_refs);

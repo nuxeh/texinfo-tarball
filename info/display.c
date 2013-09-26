@@ -1,7 +1,7 @@
 /* display.c -- How to display Info windows.
-   $Id: display.c,v 1.16 2008/06/11 09:55:41 gray Exp $
+   $Id: display.c 5338 2013-08-22 17:58:30Z karl $
 
-   Copyright (C) 1993, 1997, 2003, 2004, 2006, 2007, 2008
+   Copyright 1993, 1997, 2003, 2004, 2006, 2007, 2008, 2012, 2013
    Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
@@ -17,19 +17,16 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-   Originally written by Brian Fox (bfox@ai.mit.edu). */
+   Originally written by Brian Fox. */
 
 #include "info.h"
 #include "display.h"
+#include "tag.h"
 
 extern int info_any_buffered_input_p (void); /* Found in session.c. */
 
 static void free_display (DISPLAY_LINE **display);
 static DISPLAY_LINE **make_display (int width, int height);
-
-void handle_tag (char *tag);
-void handle_tag_start (char *tag);
-void handle_tag_end (char *tag);
 
 /* An array of display lines which tell us what is currently visible on
    the display.  */
@@ -90,33 +87,6 @@ display_update_display (WINDOW *window)
   /* Always update the echo area. */
   display_update_one_window (the_echo_area);
 }
-
-void
-handle_tag_start (char *tag)
-{
-  /* TODO really handle this tag.  */
-  return;
-}
-
-void
-handle_tag_end (char *tag)
-{
-  /* TODO really handle this tag.  */
-  return;
-}
-
-void
-handle_tag (char *tag)
-{
-    if (tag[0] == '/')
-      {
-	tag++;
-	handle_tag_end (tag);
-      }
-    else
-      handle_tag_start (tag);
-}
-
 
 struct display_node_closure {
   WINDOW *win;
@@ -143,14 +113,14 @@ find_diff (const char *a, size_t alen, const char *b, size_t blen, int *ppos)
 }
 
 int
-display_node_text(void *closure, size_t line_index,
+display_node_text(void *closure, size_t pline_index, size_t lline_index,
 		  const char *src_line,
 		  char *printed_line, size_t pl_index, size_t pl_count)
 {
   struct display_node_closure *dn = closure;
   WINDOW *win = dn->win;
   DISPLAY_LINE **display = dn->display;
-  DISPLAY_LINE *entry = display[win->first_row + line_index];
+  DISPLAY_LINE *entry = display[win->first_row + pline_index];
 
   /* We have the exact line as it should appear on the screen.
      Check to see if this line matches the one already appearing
@@ -169,7 +139,7 @@ display_node_text(void *closure, size_t line_index,
 	  /* Need to erase the line if it has escape sequences.  */
 	  || (raw_escapes_p && mbschr (entry->text, '\033') != 0))
 	{
-	  terminal_goto_xy (0, win->first_row + line_index);
+	  terminal_goto_xy (0, win->first_row + pline_index);
 	  terminal_clear_to_eol ();
 	  entry->inverse = 0;
 	  entry->text[0] = '\0';
@@ -184,7 +154,7 @@ display_node_text(void *closure, size_t line_index,
       if (i != pl_count || pl_count != entry->textlen)
 	{
 	  /* Move to the proper point on the terminal. */
-	  terminal_goto_xy (i, win->first_row + line_index);
+	  terminal_goto_xy (i, win->first_row + pline_index);
 	  /* If there is any text to print, print it. */
 	  if (i != pl_count)
 	    terminal_put_text (printed_line + i);
@@ -226,7 +196,7 @@ display_node_text(void *closure, size_t line_index,
       return 1;
     }
 
-  if (line_index + 1 == win->height)
+  if (pline_index + 1 == win->height)
     return 1;
 
   return 0;
@@ -265,14 +235,15 @@ display_update_one_window (WINDOW *win)
       dnc.win = win;
       dnc.display = the_display;
       
-      line_index = process_node_text (win, win->line_starts[win->pagetop],
+      line_index = process_node_text (win,
+				      win->line_starts[win->pagetop],
 				      1,
 				      display_node_text,
 				      &dnc);
       if (display_was_interrupted_p)
 	return;
     }
-  
+
   /* We have reached the end of the node or the end of the window.  If it
      is the end of the node, then clear the lines of the window from here
      to the end of the window. */
@@ -311,7 +282,6 @@ display_update_one_window (WINDOW *win)
           strcpy (display[line_index]->text, win->modeline);
           display[line_index]->inverse = 1;
           display[line_index]->textlen = strlen (win->modeline);
-          fflush (stdout);
         }
     }
 
@@ -354,7 +324,7 @@ display_scroll_display (int start, int end, int amount)
       last = end + amount;
 
       /* Shift the lines to scroll right into place. */
-      for (i = 0; i < (end - start); i++)
+      for (i = 1; i <= (end - start); i++)
         {
           temp = the_display[last - i];
           the_display[last - i] = the_display[end - i];
@@ -370,8 +340,7 @@ display_scroll_display (int start, int end, int amount)
           the_display[i]->inverse = 0;
         }
     }
-
-  if (amount < 0)
+  else
     {
       last = start + amount;
       for (i = 0; i < (end - start); i++)

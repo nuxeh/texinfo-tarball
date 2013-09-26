@@ -1,8 +1,8 @@
 /* footnotes.c -- Some functions for manipulating footnotes.
-   $Id: footnotes.c,v 1.9 2008/06/11 09:55:42 gray Exp $
+   $Id: footnotes.c 5338 2013-08-22 17:58:30Z karl $
 
-   Copyright (C) 1993, 1997, 1998, 1999, 2002, 2004, 2007,
-   2008 Free Software Foundation, Inc.
+   Copyright 1993, 1997, 1998, 1999, 2002, 2004, 2007, 2008, 2011, 2013
+   Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-   Originally written by Brian Fox (bfox@ai.mit.edu). */
+   Originally written by Brian Fox. */
 
 #include "info.h"
 
@@ -60,8 +60,7 @@ make_footnotes_node (NODE *node)
   fn_node = node;
 
   /* See if this node contains the magic footnote label. */
-  fn_start =
-    info_search_in_node (FOOTNOTE_LABEL, node, 0, NULL, 1, 0);
+  fn_start = info_search_in_node (FOOTNOTE_LABEL, node, 0, NULL, 1, 0, 0);
 
   /* If it doesn't, check to see if it has an associated footnotes node. */
   if (fn_start == -1)
@@ -96,7 +95,7 @@ make_footnotes_node (NODE *node)
                 if (!filename)
                   filename = node->filename;
 
-                fn_node = info_get_node (filename, refname);
+                fn_node = info_get_node (filename, refname, PARSE_NODE_DFLT);
 
                 if (fn_node)
                   fn_start = 0;
@@ -256,11 +255,11 @@ DECLARE_INFO_COMMAND (info_show_footnotes,
       switch (result)
         {
         case FN_UNFOUND:
-          info_error (msg_no_foot_node, NULL, NULL);
+          info_error ("%s", msg_no_foot_node);
           break;
 
         case FN_UNABLE:
-          info_error (msg_win_too_small, NULL, NULL);
+          info_error ("%s", msg_win_too_small);
           break;
         }
     }

@@ -1,3 +1,4597 @@
+2013-09-26  Karl Berry  <karl@gnu.org>
+
+	* Version 5.2.
+
+2013-09-19  Eli Zaretskii  <eliz@gnu.org>
+
+	* info/info-utils.c (fncmp): For MS-DOS/MS-Windows, a new function
+	for comparing file names disregarding letter-case and
+	forward/backslash differences; for Posix platforms, a macro that
+	expands into a strcmp call.
+	(info_namelist_add): Use fncmp instead of strcmp.
+
+2013-09-13  Karl Berry  <karl@gnu.org>
+
+	* pretest 5.1.90.
+
+2013-09-12  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\inlinefmtifelse, \inlineifset, \inlineifclear):
+	new commands.
+	* doc/refcard/txirefcard.tex,
+	* doc/texinfo.texi (Inline Conditionals),
+	(@t{@@set @@clear @@value}),
+	(@t{@@inlineifset @@inlineifclear}),
+	(Command Summary): document them.
+
+2013-09-11  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\onepageout): call new macro
+	\commonheadfootline to make the headline/footline vboxes,
+	which in turn calls \texinfochars.
+	(\texinfochars): new macro; should reset all definitions done by
+	@tex, but have skipped some for now out of laziness, since no
+	one has noticed.
+	(\expandablevalue): change formatting; note that _ in
+	an @value string fails in non-typewriter output,
+	and has been for a long time.
+	(\activetilde, \activehat, \activeless, \activegtr): factor
+	out the normal Texinfo definitions, now also used in \texinfochars.
+	
+	All this due to a bug report from Charlie Zender where ' in the
+	@settitle caused failures when a page break occurred inside @tex,
+	help-texinfo 08 Sep 2013 16:26:16.
+
+2013-09-10  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.texi (Two Arguments, Three Arguments):
+	some node name requirements apply to arg#2 and arg#3 too.
+	(Inline Conditionals): TeX can't properly deal with
+	newline-delimited commands inside @inline*.
+
+2013-09-09  Karl Berry  <karl@gnu.org>
+
+	* NEWS,
+	* doc/texinfo.texi (Node Line Requirements, Menu Parts,
+	Cross Reference Parts, Other Customization variables): 
+	mention Info warnings and INFO_SPECIAL_CHARS_WARNING.
+	Other small tweaks.
+
+2013-09-07  Patrice Dumas  <pertusus@free.fr>
+
+	* tp/texi2any.pl: handle plaintext as other formats to set 
+	expanded formats.
+	* tp/Texinfo/Parser.pm: accept matching braces in ignored 
+	@inline* commands.
+	* tp/Texinfo/Common.pm(@variable_string_settables),
+	tp/Texinfo/Convert/Info.pm(_node), tp/Texinfo/Convert/Plaintext.pm:
+	add the INFO_SPECIAL_CHARS_WARNING customization variable, if
+	false do not output warning messages on info characters in menu,
+	cross-refs and node names.
+	Use pending word in ref formatting to construct checked cross ref
+	and node names.
+
+2013-09-06  Patrice Dumas  <pertusus@free.fr>
+
+	* tp/Texinfo/Parser.pm, 
+	tp/Texinfo/Convert/HTML.pm(_convert_inline_command),
+	tp/Texinfo/Convert/Plaintext.pm, tp/Texinfo/Convert/DocBook.pm,
+	tp/Texinfo/Convert/Text.pm, tp/Texinfo/Common.pm, 
+	tp/Texinfo/Convert/TexinfoXML.pm:
+	implement @inlinefmtifelse, @inlineifclear, @inlineifset.
+
+2013-09-01  Patrice Dumas  <pertusus@free.fr>
+
+	* tp/Texinfo/Convert/Info.pm (_node): warn if node name contains
+	a comma.
+
+2013-08-31  Patrice Dumas  <pertusus@free.fr>
+
+	* tp/Texinfo/Convert/Plaintext.pm: warn when cross-reference
+	name contains a :, or node name contains a problematic character.
+	Warn similarly when a menu entry name contains a :, or when the
+	menu entry node contains a problematic character.
+
+2013-08-27  Patrice Dumas  <pertusus@free.fr>
+
+	* tp/Texinfo/Parser.pm: add \r to regexps to exclude it when 
+	excluding newlines.  Report from Karl.
+
+2013-08-26  Karl Berry  <karl@gnu.org>
+
+	* util/texi2dvi (run_bibtex): only run biber if
+	</bcf:controlfile> is present in the bcf file.
+	Allow override with BIBER envvar.
+	Report from Jozef Vesely, 26 Aug 2013 14:26:26.
+
+2013-08-26  Patrice Dumas  <pertusus@free.fr>
+
+	* tp/Texinfo/Convert/Plaintext.pm (_align_lines): correct byte count
+	in flushleft and center.
+
+2013-08-24  Karl Berry  <karl@gnu.org>  (tiny change)
+
+	* util/texi2dvi (run_bibtex): run biber if .bcf file exists.
+	(xref_files_changed): check for biblatex rerun warning.
+	Report from Jozef Vesely, 24 Aug 2013 12:15:40.
+
+2013-08-24  Patrice Dumas  <pertusus@free.fr>
+
+	* tp/Texinfo/Convert/Info.pm (output), 
+	tp/Texinfo/Convert/Plaintext.pm: collect text before first node
+	and output the same header for every Info output files using that
+	text.  Based on a report from Juri Linkov and analysis of Sergey.
+	Thread started at
+	http://lists.gnu.org/archive/html/bug-gnu-emacs/2013-04/msg00039.html
+
+2013-08-22  Karl Berry  <karl@gnu.org>
+
+	* info/*: update copyright notices.
+
+	* info/infomap.c (default_{emacs,vi}_like_info_keys),
+	* info/session.c (info_display_file_info): rename from
+	info_display_file.
+	* NEWS: mention display-file-info.
+	* doc/info-stnd.texi (Invoking Info): mention new debugging level,
+	more about -f.
+	(Miscellaneous Commands): document =.
+	* info/info.c (info_short_help): mention -1 for all debugging.
+
+2013-08-20  Sergey Poznyakoff  <gray@gnu.org>
+
+	* info/info.h (add_pointer_to_array): Use x2nrealloc.
+	Remove sixth argument.  All uses updated.
+	(maybe_free): Remove.  Use free() instead.  All uses
+	updated.
+
+2013-08-20  Karl Berry  <karl@gnu.org>
+
+	* configure.ac (AM_INIT_AUTOMAKE): require 1.14 for info-in-builddir.
+	Noted by Patrice.
+
+	* doc/texinfo.tex (\sectionheading): must do
+	\global\let\prevsectiondefs, since we're inside a group.
+	Otherwise, \thissection is lost in PDF output if an xref intervenes
+	due to the color \mark.  Report from Thien-Thi Nguyen, 
+	16 Feb 2013 12:06:17.
+
+2013-08-20  Sergey Poznyakoff  <gray@gnu.org>
+
+	Check for I/O errors when dumping nodes to file.
+	Use a general-purpose interface for storing and looking up in
+	a list of names.
+
+	* info/info-utils.c (info_namelist_add)
+	(info_namelist_free): New functions.
+	* info/info-utils.h: Likewise.
+	* info/info.c (namelist_add,namelist_free): Move to
+	info-utils.c, redeclare as extern.
+	(all_files): Update accordingly.
+	* info/session.c [VERBOSE_NODE_DUMPING]: Replace with
+	calls to debug.
+	(write_node_to_stream)
+	(dump_node_to_stream): Return error code.
+	(dump_nodes_to_file): Check for I/O errors,
+	(dumped_already): Change data type to struct
+	info_namelist_entry *.
+	(dumped_already_index, dumped_already_slots): Remove.
+	(initialize_dumping): Rewrite.
+
+2013-08-20  Sergey Poznyakoff  <gray@gnu.org>
+
+	Bind display-file to C-g in vi mode.
+
+	* info/infomap.c (default_vi_like_info_keys): Bind display-file to
+	C-g and abort to C-c.
+	* info/session.c (info_gc_file_buffers): Fix null pointer dereference.
+	* NEWS: Update.
+
+2013-08-19  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.texi (@t{@@unnumbered @@appendix}): mention special
+	Docbook output for acknowledgements, colophon, etc.
+
+2013-08-19  Sergey Poznyakoff  <gray@gnu.org>
+
+	New interactive command "display-file".
+
+	* info/session.c (info_display_file): New command.
+	* info/infomap.c: Bind '=' to display-file.
+
+2013-08-19  Sergey Poznyakoff  <gray@gnu.org>
+
+	Don't return dir entries when called with -a.  Fix interaction of
+	-a and --output.
+
+	* info/session.c (info_follow_menus): Add debugging output
+	on level 3.
+	In strict mode, return NULL if no matching node was found (by
+	default initial node is returned).
+	(dump_nodes_to_file,dump_node_to_file): Take flags in the
+	last parameter.  If DUMP_APPEND is set, append to the output
+	file instead of overwriting it.
+	* info/session.h (DUMP_APPEND, DUMP_SUBNODES): New flags.
+	* info/filesys.c (info_file_find_next_in_path): Improve
+	debugging output
+	* info/info.c (all_files): Set DUMP_APPEND for all but the
+	first call to dump_node_to_file.
+	(main): Initialize dump_subnodes.
+
+2013-08-18  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.texi (Image Syntax): a bit more about Docbook.
+
+	* doc/info-stnd.texi (Invoking Info),
+	(Variables): editing throughout.
+	* info/info.c (info_short_help): use MANUAL instead of FILENAME
+	for -f.  Report from Arne Babenhauserheide,
+	11 Apr 2013 11:05:37.
+
+2013-08-18  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	Improve info -a: process manpages, filter out duplicate names.
+
+	* info/info-utils.c (info_reference_free): New function.
+	(info_free_references): Use info_reference_free.
+	* info/info-utils.h (info_reference_free): New proto.
+	* info/info.c (info_find_matching_files): Return
+	REFERENCE **.
+	(namelist_add,namelist_free): New static functions.
+	(all_files): Select unique file names.
+	* info/session.c (info_split_window)
+	[SPLIT_BEFORE_ACTIVE]: Declare pagetop.
+	(info_menu_or_ref_item): Use info_reference_free.
+	(info_follow_menus): Fix processing in strict mode.
+
+	* info/filesys.c: Remove unused variable.
+	* info/filesys.h (forget_file_names): New proto.
+	* info/indices.c (apropos_in_all_indices): Use info_reference_free
+	to free a pointer to REFERENCE.
+	(info_virtual_index): Remove unused variable.
+	(allfiles_create_node): Second argument is REFERENCE **.
+	* info/indices.h (allfiles_create_node): Change signature.
+	* info/man.c (manpage_xrefs_in_binding): Use info_reference_free.
+	* info/nodes.c: Include tag.h
+	* info/nodes.h (TAG)<nodelen>: Change type to size_t.
+	* info/window.h (window_log_to_phys_line): New proto.
+
+2013-08-17  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	The -x option takes a numeric argument.
+
+	* NEWS: Document -a.
+	* doc/info-stnd.texi: Document existing debugging levels.
+	Document -x -1.
+	* info/info.c (debug_level): Change type to unsigned.
+	(long_options, short_options): -x now requires argument.
+	(set_debug_level): New function.
+	(main): Change -x handling.
+	* info/info.h (debug_level): Change declaration.
+
+	Minor fixes:
+
+	* info/echo-area.c (ea_possible_completions)
+	[SPLIT_BEFORE_ACTIVE]: Declare start here.
+	(ea_scroll_completions_window): Remove unused variable.
+	(pause_or_input): Likewise.
+
+2013-08-17  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	Fix -a functionality.
+
+	* info/info.c (all_files): Clear cached data to avoid
+	reading the same file again.
+
+2013-08-16  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.texi (Conventions): remove statement about
+	CRLF not being recognized.  It seems that both TeX and tp
+	are agnostic about line endings.
+	Report frmo vincent.belaiche@gmail.com, 21 Apr 2013 19:02:39.
+
+        * README,
+        * INSTALL,
+        * tp/TODO,
+	* doc/texinfo.texi,
+        * doc/texi2oldapi.texi,
+        * doc/refcard/txicmdcheck,
+        * doc/refcard/txirefcard.tex,
+        * doc/refcard/txivarcheck,
+        * doc/Makefile.am,
+        * util/tests/txitextest: texinfo.txi -> texinfo.texi.
+
+2013-08-15  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.texi (@settitle): typo (missing "to"), report from
+	Alex Sassmannshausen, 26 Apr 2013 14:21:38.
+	
+	* doc/texinfo.texi (Indicating): rewrite intro to avoid implying
+	that users can change at will what Texinfo's commands output.
+	(Defining New Texinfo Commands): and avoid implying that macros
+	should be used to redefine existing commands.
+	Thread with Robert Dodier, starting 26 Apr 2013 09:33:42.
+
+	* doc/texinfo.texi: @setfilename texinfo.info, not just
+	texinfo, per automake 1.14 complaint.
+
+	* configure.ac (AM_INIT_AUTOMAKE): add info-in-builddir,
+	per automake 1.14 complaint.
+
+	* doc/Makefile.am (info_TEXINFOS),
+	* doc/texinfo.texi: rename from doc/texinfo.texi,
+	per automake 1.14 deprecation.
+
+2013-08-15  gettextize  <bug-gnu-gettext@gnu.org>
+
+	* gnulib/m4/po.m4: Upgrade to gettext-0.18.3.
+	* configure.ac (AM_GNU_GETTEXT_VERSION): Bump to 0.18.3.
+
+2013-08-15  Karl Berry  <karl@gnu.org>
+
+	* install-info/install-info.c (ensure_dirfile_exists): do not
+	translate the ^_ byte; the Italian translation missed it,
+	and it makes more sense to consider it a keyword anyway.
+	Report from Thien-Thi Nguyen, 17 May 2013 11:16:41.
+
+2013-08-13  Karl Berry  <karl@gnu.org>
+
+	* doc/info-stnd.texi (Variables, Searching Commands): tweak
+	wording of search-skip-screen descriptions, etc.
+
+2013-08-12  Patrice Dumas  <pertusus@free.fr>
+
+	* tp/init/chm.pm: sort indices names to get a reproducible output.
+	Report by Karl.
+	* tp/Texinfo/Structuring.pm: set @command_unnumbered for the toplevel
+	@-command if not @top.  Report from Karl.
+
+2013-08-11  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Conventions): add item about form feed processing.
+
+2013-08-11  Patrice Dumas  <pertusus@free.fr>
+
+	* tp/Texinfo/Convert/HTML.pm(output): sort when processing renamed
+	nodes to have a reproducible error output.  Report by Karl.
+	* Texinfo/Convert/Converter.pm(_informative_command_value,
+	_informative_command): do not set informative command value if 
+	value is not defined.
+
+2013-08-10  Patrice Dumas  <pertusus@free.fr>
+
+	* tp/Texinfo/Convert/Line.pm, Texinfo/Convert/Paragraph.pm: preserve 
+	spaces coming from the document.
+	Do not break words at non-breaking spaces.
+	* Pod-Simple-Texinfo/t/Pod-Simple-Texinfo.t: correctly close =over
+	with a =back, as reported by newer Pod::Simple.  Report by Karl.
+	Mark as TODO the test that changes depending on Pod::Simple version.
+	Report by Karl.
+	* tp/Texinfo/Parser.pm(_next_text): add a end of line at the end of
+	files when there is one missing.  Found out in 
+	https://bugzilla.redhat.com/show_bug.cgi?id=950644
+	* tp/Makefile.am: reorder alphabetically test input files.  
+	Distribute missing test files.
+	* tp/t/test_utils.pl(test): allow for marking tests as TODO.  Use
+	this facility to mark a test of all_spaces that fails on perl 5.10
+	with NEL not being treated the same as in perl 5.14.
+
+2013-08-09  Patrice Dumas  <pertusus@free.fr>
+
+	* tp/Texinfo/Convert/DocBook.pm(_protect_text): convert
+	formfeed to space instead of simply removing it.
+
+2013-08-09  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\codedashfinish): include an explicit
+	space after the \let=, for @code{- a}.
+	Report from Vincent Lefevre, 7 Aug 2013 04:07:10.
+
+2013-08-08  Patrice Dumas  <pertusus@free.fr>
+
+	* tp/Texinfo/Convert/Plaintext.pm: output ^L in ignorable
+	spaces.
+
+2013-08-07  Patrice Dumas  <pertusus@free.fr>
+
+	* tp/Texinfo/Convert/HTML.pm(_default_protect_text), 
+	tp/init/html32.pm: protect ^L with an entity.
+	* tp/Texinfo/Convert/Plaintext.pm: output ^L between 
+	paragraphs.
+
+2013-08-06  Patrice Dumas  <pertusus@free.fr>
+
+	* tp/Texinfo/Convert/TexinfoXML.pm(_xml_attributes):
+	do not protect \f and \ in spaces or trailingspaces attributes.
+	* tp/Texinfo/Convert/DocBook.pm(_protect_text): remove
+	form-feed from output, as it is not allowed in XML.
+
+2013-08-06  Patrice Dumas  <pertusus@free.fr>
+
+	* Texinfo/Parser.pm: keep form-feed in @set value.
+	* util/texinfo.dtd, util/txixml2texi.pl, 
+	tp/Texinfo/Convert/TexinfoXML.pm(_protect_text): output form-feed
+	as entity in XML, when possible.  Handle form-feeds in 
+	txixml2texi.pl too.
+	* tp/Texinfo/Convert/TexinfoXML.pm(_xml_attributes),
+	util/texinfo.dtd, util/txixml2texi.pl: protect form-feed in
+	attributes by using an entity that becomes a literal \f. 
+	Double \ in attributes too.
+
+2013-08-06  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\smartitaliccorrection): also omit italic
+	correction if next command is @. or @comma.
+	Report from Vincent Lefevre, 5 Aug 2013 02:47:31.
+
+2013-08-06  Patrice Dumas  <pertusus@free.fr>
+
+	* Texinfo/Parser.pm: form-feed in paragraph stops the current
+	paragraph.  For that consider \f to be a separator.
+
+2013-08-04  Patrice Dumas  <pertusus@free.fr>
+
+	* Texinfo/Parser.pm: keep form-feed in macro arguments.
+
+2013-07-29  Patrice Dumas  <pertusus@free.fr>
+
+	* Texinfo//Common.pm (enumerate_item_representation),
+	* Texinfo/Parser.pm:
+	handle correctly @enumerate specification greater than 10.
+	Report from Dmitry Shachnev.
+
+2013-06-28  Karl Berry  <karl@gnu.org>
+
+	* contrib/perldoc-all/GNUmakefile (texi_pod_doc_incl): remove X<...>
+	pod constructs, so we get good filenames.  For perl-5.18.0.
+
+2013-06-25  Patrice Dumas  <pertusus@free.fr>
+
+	* tp/Texinfo/Convert/HTML.pm: use "prev" for rel attribute and not 
+	"previous", as prev is the preferred one.  Report by Tom Tromey.
+
+2013-06-21  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\codedash): use \futurelet.
+	(\codedashfinish): new definition for - inside @code et al.,
+	which does not allow a break after a - when it is preceded or
+	followed by another -, or when it is first.
+	(\code): initialize \codedashprev for the - as first char case.
+	Report from Arnold Robbins, 04 Apr 2013 01:30:28 -0600.
+
+	* texi2dvi (run_makeinfo): more verbose error message if our
+	test reading texinfo.tex fails.  Suggestion from Vincent B,
+	25 May 2013 23:10:58.
+
+2013-06-08  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	Skip the current screen when repeating searches.
+
+	* NEWS: Update.
+	* doc/info-stnd.texi: Document the -a (--all) option and
+	the search-skip-screen. Mention '}' and '{' commands when
+	discussing repeated searches.
+	* doc/version-stnd.texi: Update.
+	* doc/version.texi: Update.
+	* info/session.c (search_skip_screen_p): New variable.
+	(info_search_1): Take additional argument, supplying the
+	starting position for the search. All uses changed
+	(DFL_START): New define.
+	(info_search_next,info_search_previous): If search_skip_screen_p
+	is set, skip the lines displayed on the screen.
+	* info/variables.c (info_variables): New variable
+	"search-skip-screen".
+	* info/variables.h (min_search_length): New proto.
+
+2013-06-07  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Preparing for @TeX{}): texinfo.cnf
+	is a "configuration" file, other wording tweaks.
+
+2013-06-07  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+        Handle "index" tag.
+        * info/tag.c (tags_expand): Accept NULL handler as a no-op.
+        (tagtab): Add an entry for "index".
+
+2013-04-29  Stefano Lattarini  <stefano.lattarini@gmail.com>  (tiny change)
+
+	* tp/Makefile.am,
+	* tp/tests/Makefile.am: use $(MKDIR_P) instead of $(mkdir_p).
+
+2013-04-16  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	Restore the cursor position when going to the Up node.
+
+	* info/session.c (info_win_find_node): New static.
+	(info_handle_pointer): When handling Up pointer,
+	restore the point (cursor position) as well.
+
+2013-04-16  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	Implement the --all (-a) option as per bug #38168.
+
+	* info/infopath.c: New file.
+	* info/Makefile.am (ginfo_SOURCES): Add new file.
+	* info/tilde.c (tilde_expand_word): Argument is const char *.
+	All uses changed.
+	* info/info.c (all_matches_p): New variable.
+	(long_options, short_options): New option --all (-a).
+	(single_file, all_files): New functions.
+	(main): Handle new option.
+	* info/nodes.c (forget_info_file): Now extern.
+	* info/nodes.h (forget_info_file): New proto.
+	* info/indices.c (create_virtindex_file_buffer): Allow for
+	NULL as the filename.
+	(allfiles_create_node, info_all_files): New functions.
+	* info/dir.c (maybe_build_dir_node): Use infopath_first and
+	infopath_next to iterate over the INFOPATH.
+	* info/filesys.c: Remove infopath functions. See infopath.c
+	(info_file_in_path, info_file_find_next_in_path): New functions.
+	* info/indices.h (allfiles_create_node): New prototype.
+	* info/filesys.h (infopath): Remove extern.
+	(infopath): New prototype.
+	(zap_infopath): Rename to infopath_clear.
+	(info_add_path): Rename to infopath_add.
+	(infopath_init,infopath_first,infopath_next)
+	(info_file_find_next_in_path): New prototypes.
+	(INFOPATH_INIT): New constant.
+	* info/session.c (info_read_and_dispatch): Do not set
+	quit_info_immediately, it is done by info_quit.
+	(info_follow_menus): Take an additional argument.
+	(info_quit): Set quit_info_immediately.
+	* info/session.h (quit_info_immediately): Extern.
+	(info_follow_menus): Change signature.
+	* info/infomap.c: Bind `C-x f' in Emacs mode, and `:a' in Vi mode
+	to info_all_files.
+
+	* doc/info-stnd.texi: Document the --all option.
+
+2013-04-13  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	* info/infomap.c: Fix indentation and style.
+
+2013-04-13  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	Implement new options for standalone info.
+
+	* info/info.c (debug_level): New variable.
+	(long_options): New options: -x (--debug) and -v (--variable).
+	(short_options): Update accordingly.
+	(main): Handle the new options.
+	(vinfo_debug, info_debug): New functions.
+	* info/info.h (info/info.h): New exern.
+	(debug): New macros.
+	(vinfo_debug, info_debug): New prototypes.
+	(set_variable_to_value): Change the return type.
+	* info/variables.c (set_variable_to_value): Compile
+	unconditionally.  Return 0/-1 depending on the success/failure of
+	the operation.
+	* info/filesys.c: Print additional debugging info.
+	* info/infomap.c: Check the return from set_variable_to_value.
+	* doc/info-stnd.texi: Document new options.
+	* doc/version.texi: Update.
+	* doc/version-stnd.texi: Update.
+	* NEWS: Update.
+
+2013-04-07  Patrice Dumas  <pertusus@free.fr>
+
+	* configure.ac: set DIFF_A_OPTION to -a, and not DIFF_U_OPTION.
+	* tp/Texinfo/Convert/Plaintext.pm: do not consider an empty line
+	at the end of a preformatted format as counting as an empty line
+	in order to output an empty line following the preformatted format 
+	too.  Karl report.
+	* tp/Texinfo/Convert/DocBook.pm: add support for special docbook
+	sectioning elements with special node names and @unnumbered. 
+	Feature asked for by Aharon Robbins, syntax by Karl.
+
+2013-03-31  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	* info/indices.c (info_next_index_match): Fix improper string
+	indexing. Based on report from Eli Zaretskii.
+
+2013-03-31  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	Fix \b[...\b] tag processing.
+
+	* info/nodes.h (TAG) <content_cache>: New member.
+	* info/nodes.c (get_nodes_of_info_file)
+	(get_nodes_of_tags_table): Initialize TAG->content_cache.
+	(info_node_of_file_buffer_tags): Use cached contents if
+	available. Call tags_expand upon the first access to that
+	node.
+	(free_info_tag): Free content_cache.
+	* info/tag.c (tag_image): Fix state machine.  Ignore '='s,
+	unless in state_kw.
+	(tags_expand): Change return value and signature. Allocate
+	memory only if at least one tag is actually expanded.
+	* info/tag.h (tags_expand): Change prototype.
+	* info/filesys.c (filesys_read_info_file): Do not call
+	tags_expand on the entire buffer.
+
+2013-03-20  Karl Berry  <karl@gnu.org>
+
+	Doc tweaks.
+	* NEWS: more technalities about the macro-expansion incompatibility.
+	* README-hacking: call change_perl_modules_version.sh for release.
+	* doc/texinfo.txi: wording around PDF items.
+	* doc/texinfo.tex: typos in comment.
+
+2013-03-20  Eli Zaretskii  <eliz@gnu.org>
+
+	* Makefile.am (SUBDIRS): If HOST_IS_WINDOWS, add 'info' to SUBDIRS
+	even if HAVE_TERMLIBS is false.
+	* configure.ac <have_termlib>: Don't bother warning on MinGW as
+	well.
+
+2013-03-20  Karl Berry  <karl@gnu.org>
+
+	* man/Makefile.am (man_rule_0): set EXEEXT="" since it's
+	no longer an executable.  Report from Eli, 20 Mar 2013 20:47:52.
+	(mi_perl5lib): set up another variable to shorten source lines.
+
+2013-03-16  Patrice Dumas  <pertusus@free.fr>
+
+	* tp/Texinfo/Parser.pm (_parse_texi): accept the same 
+	character in @value as in @set.
+
+2013-03-14  Karl Berry  <karl@gnu.org>
+
+	* maintain/regenerate_cmd_tests.sh,
+	* tests/run_parser_all.sh,
+	* tests/many_input_files/tex_l2h.sh: use $0 in some diagnostics.
+
+	* NEWS: mention switch from cvs to svn.
+	* doc/texinfo.txi (Invoking @t{pod2texi}): svn url instead of cvs
+	for Perl manual in Texinfo.
+	* contrib/perldoc-all/perldoc-all.texi: likewise, and turn off
+	all underfull/overfull messages since we can't do anything about them.
+	* contrib/perldoc-all/README: 5.16.3.
+	* contrib/perldoc-all/GNUmakefile (all): set save_size in
+	environment to avoid TeX overflow.
+	(install): new target.
+	* doc/texinfo.tex (\nonfillstart): only reset to \hfuzz=12pt
+	if it's less than that.
+
+	* README-hacking: tweaks to release wording.
+
+2013-03-12  Karl Berry  <karl@gnu.org>
+
+	* Version 5.1.
+
+2013-03-11  Patrice Dumas  <pertusus@free.fr>
+
+	* tp/init/tex4ht.pm (tex4ht_process_command): correct
+	the warning, it should also give the reason of the error.
+	Follow-up on Benno Schulenberg report.
+
+2013-03-08  Karl Berry  <karl@gnu.org>
+
+	* pretest 5.0.91.
+
+	* install-info/install-info.c (print_help): combine
+	sentence for better translation.
+	* tp/init/tex4ht.pm (tex4ht_process_command): omit :
+	for consistency.
+	Report from Benno Schulenberg, 08 Mar 2013 22:07:31.
+
+	* util/texi2dvi: don't mention Debian specifically;
+	I don't think tetex-bin has been the name for a while.
+
+	* util/gendocs.sh: omit --split=node for the sake of pre-5.0
+	installations.  Report to bug-gnulib from Martin von Gagern,
+	08 Mar 2013 19:20:36.
+
+2013-03-05  Patrice Dumas  <pertusus@free.fr>
+
+	* tp/Texinfo/Parser.pm (_close_current): close correctly stacks when
+	closing $format_raw_commands.  Report from Mat Booth.
+
+2013-03-02  Karl Berry  <karl@gnu.org>
+
+	* pretest 5.0.90.
+
+	* NEWS,
+	* doc/texinfo.txi (Macro Details): behavior of newlines in macro
+	definitions and line-delimited commands has changed.
+
+2013-03-02  Patrice Dumas  <pertusus@free.fr>
+
+	* tp/Texinfo/Parser.pm: put the first line in 'pending' instead of 
+	seeking back in the input stream.
+
+2013-02-28  Patrice Dumas  <pertusus@free.fr>
+
+	* tp/t/test_utils.pl: close generated files before doing the comparison.
+	* tp/Texinfo/Convert/Plaintext.pm, tp/Texinfo/Convert/Info.pm:
+	cache get_conf() results.  Convert node names only once.
+	* tp/texi2any.pl, doc/texinfo.txi (Customization Variables and Options):
+	two new formats, parse and structure that respectively do the parsing 
+	phase, and the parsing and structuring phase, and no conversion.
+
+2013-02-26  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Generating HTML, HTML CSS): xref to
+	Customization Variables.  Suggestion from Vincent Belaiche.
+
+2013-02-25  Patrice Dumas  <pertusus@free.fr>
+
+	* tp/Texinfo/Parser.pm: use tell to find the position of the 
+	beginning of the line.
+	Close line @-command with special @-commands if there is no comment
+	ending the line.  Report from Eli Zaretskii on bug-texinfo,
+	24 Feb 2013 17:53:15.
+	* configure.ac, tp/defs.in, tp/tests/run_parser_all.sh:
+	determine whether diff accepts -a and sets DIFF_A_OPTION to -a if so.
+
+2013-02-24  Karl Berry  <karl@gnu.org>
+
+	* tp/Makefile.am (install-exec-hook): rm old makeinfo,
+	possibly a binary, before making the link.
+	Report from Ken Moffat, 23 Feb 2013 21:31:33.
+
+	* doc/texinfo.txi (Other Customization Variables): OPEN_ and
+	CLOSE_QUOTE_SYMBOL now apply to Info too.
+	(@t{@@code}): mention this.
+	(@t{@@set @@value}): grudgingly mention that some non-alphanumerics
+	sometimes work in @set names.
+
+2013-02-24  Patrice Dumas  <pertusus@free.fr>
+
+	* configure.ac, tp/defs.in, tp/tests/*/*.sh,
+	tp/tests/run_parser_all.sh:
+	determine whether diff accepts -u and sets DIFF_U_OPTION to -u if so.
+	Report that HP-UX diff do not accept -u from Richard Lloyd
+	bug-texinfo, 19 Feb 2013 15:56:41.
+
+2013-02-23  Patrice Dumas  <pertusus@free.fr>
+
+	* tp/t/input_files/sample_utf8.texi: avoid having two nodes differing
+	only in case, for case-sensitve filesystems.
+	Report in http://savannah.gnu.org/bugs/?38380.
+	* tp/Makefile.am, tp/maintain/*: modularize and rename scripts
+	associated to standalone modules handling.
+	* tp/Texinfo/Convert/Plaintext.pm: use OPEN_QUOTE_SYMBOL and 
+	CLOSE_QUOTE_SYMBOL.
+	* tp/Texinfo/Parser.pm: allow more characters in flags.
+	do not close a line after a special command @set...
+
+2013-02-22  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (@t{@@set @@value}): mention that @set
+	need not appear at the beginning of a line.
+	(@t{@@enumerate}, @t{@@itemize}): clarify that at least
+	one @item should be inside @itemize.
+	
+	* README-hacking: include potential CPAN update in release checks.
+
+2013-02-22  Antonio Diaz Diaz  <ant_diaz@teleline.es>  (tiny change)
+
+	* info/filesys.c (compress_suffixes): Add .lz/lzip.
+	* install-info/install-info.c (open_possibly_compressed_file):
+	Add lzip support.
+	* doc/info-stnd.texi,
+	* doc/texinfo.txi: mention it.
+	bug-texinfo, 22 Feb 2013 19:08:02.
+
+2013-02-22  Eli Zaretskii  <eliz@gnu.org>
+
+	* install-info/ginstall-info.exe.manifest: new file.
+	* install-info/Makefile.am (dist_bin_SCRIPTS) [HOST_IS_WINDOWS]:
+	add it.  bug-texinfo, 19 Feb 2013 19:39:51.
+
+	* info/pcterm.c (pc_initialize_terminal): Move prototype outside
+	of w32_info_init to the file level.
+	bug-texinfo, 19 Feb 2013 19:40:48.
+
+2013-02-22  Patrice Dumas  <pertusus@free.fr>
+
+	* tp/Texinfo/Parser.pm: better handling of comments in @-commands
+	with line specially handled (@set, @ifset, @unmacro...).
+	Accept @set and @clear almost everywhere.
+	Accept that @set and @clear are not at the beginning of a line.
+	Do not warn for @end in style command, as it may be the @end of
+	a conditional that is correct in that context.
+	Improve error messages of @-commands with braces closed because
+	of seeing a command before the closing brace.
+
+2013-02-21  Karl Berry  <karl@gnu.org>
+
+	* NEWS: mention incompatibilities of text outside @item
+	and irregular sectioning trees.
+
+2013-02-20  Patrice Dumas  <pertusus@free.fr>
+
+	* Makeinfo.am, texi2html/test/*/Makefile.am, tp/tests/*/Makefile.am,
+	tp/maintain/regenerate_file_lists.pl, tp/tests/many_input_files/*.sh,
+	tp/tests/run_parser_all.sh, texi2html/test/run_*.sh, 
+	texi2html/test/many_input_files/*.sh: adapt for SVN.
+	* tp/MANIFEST: regenerate.
+	* tp/Texinfo/Structuring.pm: lowering a section level is only a 
+	warning.
+
+2013-02-18  Karl Berry  <karl@gnu.org>  (tiny change)
+
+	* info/info-utils (va_copy) [__hpux]: define for HP-UX,
+	From Richard Lloyd, 18 Feb 2013 11:52:10.
+	* system.h (TEXINFO_PRINTFLIKE) [! __GNUC__]: define to nothing.
+
+2013-02-17  Karl Berry  <karl@gnu.org>
+
+	* doc/refcard/txirefcard.tex: reduce to four pages again
+	(by regretfully removing the Emacs section).
+
+2013-02-16  Karl Berry  <karl@gnu.org>
+
+	* Version 5.0.
+	
+	* doc/texinfo.txi: remove zyx placeholder.
+
+2013-02-13  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	* info/window.c (window_make_window): Initialize allocated
+	memory.
+	(string_to_node): Likewise.
+	* info/filesys.c (filesys_read_info_file): Always terminate
+	the contents with 0.
+	Fix 700354@bugs.debian.org.
+
+2013-02-12  Karl Berry  <karl@gnu.org>
+
+	* pretest 4.13.97.
+
+2013-02-10  Karl Berry  <karl@gnu.org>
+
+	* info/tag.c (tag_found_keyword): new fn, including a check
+	for the text buffer being realloc-ed, invalidating kw.  Sigh.
+	(tag_image): call it (twice).
+
+2013-02-10  Patrice Dumas  <pertusus@free.fr>
+
+	* autogen.sh, tp/maintain/regenerate_cmd_tests.sh, tp/tests/*:
+	Generate automatically test file scripts for each test in 
+	tp/tests/*.
+	* tp/Makefile.am: run directly tap tests in Makefile.am.
+
+2013-02-09  Patrice Dumas  <pertusus@free.fr>
+
+	* configure.ac, tp/Makefile.am, tp/maintain/regenerate_file_lists.pl:
+	prepare for running directly tap tests in Makefile.am.
+
+2013-02-07  Karl Berry  <karl@gnu.org>
+
+	* contrib/booklet.mak: new contribution from John Darrington.
+
+	* Pod-Simple-Texinfo/pod2texi.pl (preamble): back to inserting
+	the default.
+	* contrib/perldoc-all/GNUmakefile (pod2texi_args): omit it.
+
+2013-02-04  Karl Berry  <karl@gnu.org>
+
+	* pretest 4.13.96.
+
+	* contrib/perldoc-all/GNUmakefile (distclean): new target.
+	* Makefile.am (dist-hook): use it.
+
+2013-02-03  Karl Berry  <karl@gnu.org>
+
+	* contrib/perldoc-all: example making Texinfo from Perl's *.pod.
+	* util/dir-example (Perl): add it.
+	* util/gendocs.sh: add --source, --common, --split --no-ascii.
+	Prettify output.
+	* doc/Makefile.am (gendocs): use the version from our
+	source hierarchy, since it's maintained here.
+
+	* Pod-Simple-Texinfo/pod2texi.pl (preamble): null if making
+	@include files.  More doc.
+	* doc/texinfo.txi (Invoking pod2texi): new node.
+
+2013-02-03  Karl Berry  <karl@gnu.org>
+
+	* tp/Makefile.am: doc fix.
+	* tp/maintain/regenerate_docstr.sh: do not depend on directories
+	with their unpredictable timestamps.
+	* tp/maintain/regenerate_file_lists.pl: copyright year update.
+
+	* po_document/pl.po: new translation.
+	* po_document/LINGUAS: add it.
+
+2013-02-01  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (@normalturnoffactive): also reset -, so
+	@code{@xref{-}} works.
+	(\normaldash): rename from \realdash, for consistency.
+	Change all uses.
+
+2013-01-29  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (HTML Customization Files) <TOC_FILE>: is no more.
+
+2013-01-29  Patrice Dumas  <pertusus@free.fr>
+
+	* po/POTFILES.in, tp/init/latex2html.pm: mark translations
+	for error messages in latex2html.pm, and add file to 
+	po/POTFILES.in.
+
+2013-01-28  Karl Berry  <karl@gnu.org>
+
+	* pretest 4.13.95.
+
+	* README-hacking: .po files might not be literal copies.
+	texinfo_document is new TP domain.
+
+	* build-aux/config.sub: srclist-update.
+
+	* tp/Makefile.am (dist_converters_DATA): add
+	Texinfo/Convert/IXIN.pm Texinfo/Convert/IXINSXML.pm.
+
+2013-01-27  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (HTML Customization Variables): split node
+	out from Other Cust Var.
+	(Other Customization Variables): new TEXINFO_OUTPUT_FORMAT
+	replaces the individual special-output-format variables.
+	* doc/refcard/txivarcheck: only check uppercase
+	variable names, and do output manual-only names.
+
+	* man/pod2texi.1: new file, made with pod2man.
+	* man/Makefile.am (man_MANS): add it.
+
+2013-01-27  Patrice Dumas  <pertusus@free.fr>
+
+	* tp/texi2any.pl, tp/Texinfo/Common.pm, tp/DebugTexinfo/DebugTree.pm,
+	util/detexinfo: remove output specific customization variables.
+
+2013-01-25  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Other Customization Variables)
+	<TEXINFO_COLUMN_FOR_DESCRIPTION>: new.
+	<TREE_TRANSFORMATIONS>: add indent_menu_descriptions.
+	Also, use it to re-indent the menus and regenerate_master_menu.
+
+2013-01-21  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Raw Formatter Commands): be more emphatic
+	about some processing being done inside raw regions,
+	and the resulting unpredictable effects when Texinfo-level
+	things are done there.
+
+2013-01-20  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Other Customization Variables)
+	[TREE_TRANSFORMATIONS]: @ftable, text tweaks.
+	(Top): update with texinfo-master-menu.
+
+	* doc/info-stnd.texi: @t in node names, merge footnote text
+	where reasonable.
+
+2013-01-19  Patrice Dumas  <pertusus@free.fr>
+
+	* util/texinfo.dtd: add number attribute for float and indexterm.
+
+2013-01-19  Karl Berry  <karl@gnu.org>
+
+	* pretest 4.13.94.
+	
+	* README-hacking: tersely describe release steps.
+
+2013-01-18  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Customization Variables for Program Behavior)
+	[TEXINFOSXML]: new output format.
+	* tp/Makefile.am (dist_converters_DATA): add TexinfoSXML.pm.
+
+2013-01-16  Patrice Dumas  <pertusus@free.fr>
+
+	* tp/Texinfo/Convert/TexinfoXML.pm: replace tp/Texinfo/Convert/XML.pm.
+
+2013-01-16  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Marking Text): remaining node names needing @t.
+
+2013-01-15  Karl Berry  <karl@gnu.org>
+
+	* po_document/LINGUAS: es.us-ascii is back, paperwork executed
+	by Francisco Vila <paconet.org@gmail.com>.
+
+	* doc/texinfo.txi: use @t instead of @code in node names,
+	to avoid extraneous quotes.
+
+2013-01-15  Patrice Dumas  <pertusus@free.fr>
+
+	* autogen.sh: adapt to shorter regenerate_docstr.sh 
+	and Makefile.docstr names.
+
+2013-01-14  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Conditionally Visible Text,
+	Defining New Texinfo Commands,
+	Formatting and Printing Hardcopy,
+	Creating an Info File): node names with @.
+	Fix more xrefs for new names.
+
+2013-01-13  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Special Insertions, Breaks, deffnx,
+	documentencoding): node names with @, restructure.
+
+	* po_document/LINGUAS (ja, es.us-ascii): remove.
+	* tp/maintain/regenerate_docstr.sh: shorten name of
+	regenerate_document_strings_make_rules.sh.
+	* tp/Makefile.docstr: shorten name of generated file, too.
+	* tp/Makefile.am: renames.
+
+2013-01-12  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Internationalization of Document Strings):
+	small changes.
+
+2013-01-11  Karl Berry  <karl@gnu.org>
+
+	* configure.ac (AC_PREREQ): remove, better to rely on
+	AM_INIT_AUTOMAKE's implicit prereq.
+	Suggestion from Stefano, 11 Jan 2013 12:12:53.
+
+	* tp/tests/Makefile.am (long-check, all-check, tex-html-check):
+	aliases for the names with s.
+
+2013-01-11  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	* info/window.c (calculate_line_starts): call window_line_map_init,
+	19 Dec 2012 14:10:30 +0200
+
+2013-01-08  Patrice Dumas  <pertusus@free.fr>
+
+	* po_document/fr.us-ascii.po: update by Jean-Charles Malahieude,
+	with additional edits.
+	* doc/texinfo.txi (Internationalization of Strings), doc/draft_api.texi
+	(Internationalization of Strings Function): re-add the text about
+	translated strings in the manual keeping only the perl api information
+	in draft_api.texi.
+
+2013-01-08  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Lists and Tables, Floats): node names with @.
+
+2013-01-07  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Cross References, Quotations and Examples):
+	node names with @ throughout chapter.
+
+2013-01-06  Karl Berry  <karl@gnu.org>
+
+	* install-info/install-info.c (open_possibly_compressed_file):
+	free in .gz case is wrong.
+
+	* doc/texinfo.txi (Nodes): node names with @ throughout chapter.
+
+	* doc/texinfo.txi (acronyn, Smallcaps): more about the problems of
+	using them, and not recommending them.
+
+2013-01-06  Patrice Dumas  <pertusus@free.fr>
+
+	* configure.ac: prove is required for tp tests.
+
+2013-01-05  Karl Berry  <karl@gnu.org>
+
+	* install-info/install-info.c (open_possibly_compressed_file):
+	free the original in the .gz and (found by Andreas Schwab, 05 Jan
+	2013 12:28:05) .xz cases too.  Reindent other parts of fn correctly.
+
+	* doc/texinfo.txi (Chapter Structuring): node names with @
+	throughout chapter.
+
+2013-01-05  Patrice Dumas  <pertusus@free.fr>
+
+	* util/*.bat: remove spurious +, reported by Eli Z.
+
+2013-01-04  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (end titlepage, setchapternewpage,
+	headings on off, paragraphindent, exampleindent): continue
+	conversion to node names with @.
+
+2013-01-03  Thien-Thi Nguyen  <ttn@gnuvola.org>  (tiny change)
+
+	* doc/texinfo.txi (Combining Indices):
+	@synindex uses the "roman font for merged-from". 
+
+2013-01-03  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (setfilename, settitle, copying, insertcopying,
+	titlepage, titlefont center sp, title subtitle author,
+	documentdescription, quotation, setfilename, settitle): continue
+	conversion to node names with @.
+
+2013-01-01  Karl Berry  <karl@gnu.org>
+
+	* pretest 4.13.93.
+
+	* util/Makefile.am (texinfo.cat): remove rule and references;
+	not aware of anything using it, current rule fails distcheck.
+
+	* util/tests: move the TeX-related tests (all unused) here
+	from util/.
+
+	* contrib: new directory; move contributed files from util/ there.
+
+	* Pod-Simple-Texinfo/pod2texi.pl,
+	* doc/texinfo.txi,
+	* doc/refcard/txirefcard.tex,
+	* info/info.c,
+	* info/infokey.c,
+	* install-info/install-info.c,
+	* tp/texi2any.pl,
+	* util/texi-elements-by-size,
+	* util/texindex.c,
+	* util/texi2dvi,
+	* util/gendocs_template,
+	* util/gendocs_template_min: 2013.
+
+2013-01-01  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex: received official GPLv3 exception text for
+	texinfo.tex (RT licensing #502113).
+        Same wording / no change in permissions.
+
+2012-12-31  Karl Berry  <karl@gnu.org>
+
+	* install-info/install-info.c (): mention
+	--add-once, --align, --calign, --maxwidth, --max-width,
+	inadvertently omitted when implemented.
+	Also don't mention removals working with --entry.
+	Report from Benno Schulenberg, 26 Dec 2012 19:34:40.
+
+2012-12-30  Eli Zaretskii  <eliz@gnu.org>
+
+	* configure.ac: Use $host, not $target, to detect MS-Windows
+	builds, and set HOST_IS_WINDOWS if so.
+
+	* util/Makefile.am (bin_SCRIPTS): Decide whether to install
+	Windows batch files using HOST_IS_WINDOWS.
+
+2012-12-29  Karl Berry  <karl@gnu.org>
+
+	* util/htmlxref.cnf (gmp): use up-to-date version on gmplib.org.
+
+	* util/srclist.txt (missing): sync from $AUTOMAKE.
+	
+2012-12-29  gettextize  <bug-gnu-gettext@gnu.org>
+
+	* gnulib/m4/po.m4: Upgrade to gettext-0.18.2.
+	* configure.ac (AM_GNU_GETTEXT_VERSION): Bump to 0.18.2.
+
+2012-12-29  Patrice Dumas  <pertusus@free.fr>
+
+	* util/Makefile.am (texinfo.cat): use $(TEXINFO_DTD_VERSION) instead
+	of @VERSION@.  Report from Thien-Thi Nguyen.
+
+2012-12-22  Karl Berry  <karl@gnu.org>
+
+	* util/Makefile.am (EXTRA_DIST): add *.bat.  Report from Eli,
+	22 Dec 2012 17:33:58.
+
+2012-12-19  Patrice Dumas  <pertusus@free.fr>
+
+	* configure.ac, tp/Texinfo/*, tp/t/*: use the correct next version 
+	number for DTD and in other places.
+
+2012-12-17  Karl Berry  <karl@gnu.org>
+
+	* pretest 4.13.92.
+
+2012-12-15  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi: use "sectioning" as the general term
+	in a few places.
+	(Other Customization Variables) <TREE_TRANSFORMATIONS>: more
+	on default.
+
+2012-12-11  Eli Zaretskii  <eliz@gnu.org>
+
+	* configure.ac (TGT_IS_WINDOWS): New conditional.
+	* util/Makefile.am (bin_SCRIPTS) [TGT_IS_WINDOWS]: add Windows
+	batch files to bin_SCRIPTS.
+
+2012-12-14  Ineiev  <ineiev@gmail.com>  (tiny change)
+
+	* configure.ac (HAVE_TERMLIBS): new conditional.  End with
+	repeated warning about no terminal library for visibility.
+	* Makefile.am (SUBDIRS) [HAVE_TERMLIBS]: only include info/ if
+	new conditional is true.
+	* man/Makefile.am (man_MANS) [HAVE_TERMLIBS]: likewise for making
+	info.1 and infokey.1.
+
+2012-12-14  Thien-Thi Nguyen  <ttn@gnuvola.org>  (tiny change)
+
+	* doc/texinfo.txi (Three Arguments):
+	Add @findex xrefautomaticsectiontitle.
+
+2012-12-14  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Other Customization Variables): edit
+	wording of defaults, etc.
+
+2012-12-10  Patrice Dumas  <pertusus@free.fr>
+
+	* configure.ac, tp/Makefile.am, tp/texi2any.pl, tp/Texinfo/Common.pm, 
+	tp/Texinfo/Convert/XML.pm, tp/maintain/catalog.xml.in,
+	tp/t/test_utils.pl,
+	doc/texinfo.txi (Other Customization Variables):
+	Add a new configure variable TEXINFO_DTD_VERSION that holds the version
+	of the dtd.  Add the corresponding customization variable in tp/.
+
+2012-12-08  Patrice Dumas  <pertusus@free.fr>
+
+	* doc/texinfo.txi (Command Contexts): @verb is not accepted in 
+	simple text commands and sectioning commands.
+
+2012-12-02  Karl Berry  <karl@gnu.org>
+
+	* configure.ac (TERMLIB_VARIANTS): try tinfo first.
+	Suggestion from Andreas Schwab, 02 Dec 2012 10:00:44.
+
+2012-12-02  Colin Watson  <cjwatson@ubuntu.com>
+
+	Build gnulib/lib directory in native-tools pass when
+	cross-compiling (bug #37852).
+	* Makefile.am (SUBDIRS) [TOOLS_ONLY]: Add gnulib/lib.
+
+2012-12-02  Karl Berry  <karl@gnu.org>
+
+	* install-info/tests/defs.in (TMPDIR): define if not defined.
+
+2012-12-02  Patrice Dumas  <pertusus@free.fr>
+
+	* configure.ac: remove gnulib module regex snippet, it is already in 
+	gnulib/m4/gnulib-comp.m4.
+	* configure.ac, tp/Texinfo/Convert/Unicode.pm: check that Encode is
+	available, and use perl >= 5.7.3, required for Encode.  Report from 
+	Stefano Lattarini.
+
+2012-12-01  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	Fix bug #37822 (incomplete redraw of screen).
+
+	* info/display.c (display_scroll_display): Fix a "fencepost"
+	error when scrolling down.
+	* info/terminal.c: Improve conditional.
+
+2012-12-01  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	Fix cursor positioning after index searches (bug #37823).
+
+	* info/window.h (WINDOW): Use size_t instead of int.
+	(log_line_no): New member.
+	(process_node_text): Change signature.
+	* info/window.c (window_new_screen_size,recalculate_line_starts)
+	(window_toggle_wrap,window_delete_window): Handle the
+	log_line_no array.
+	(calc_closure_expand): New static function.
+	(_calc_line_starts): Update log_line_no. Use calc_closure_expand
+	instead of the add_pointer_to_array macro.
+	(calculate_line_starts): Fill in log_line_no.
+	(window_log_to_phys_line): New function.
+	(process_node_text): Keep track of logical line numbers.
+	* info/display.c (display_node_text): Change signature.
+	* info/indices.c (info_next_index_match): Convert logical line
+	number to physical line.
+
+	* info/tag.c (tags_expand): Remove unused variables.
+	(handle_tag): Fix return type.
+	* info/tag.h (handle_tag): Fix return type.
+
+2012-11-30  Patrice Dumas  <pertusus@free.fr>
+
+	* doc/texinfo.txi (Invoking texi2any), tp/texi2any.pl: add -c as an
+	alias for --set-customization-variable (Karl idea).
+	* doc/texinfo.txi (Other Customization Variables): explain default 
+	values for customization variables.
+
+2012-11-30  Karl Berry  <karl@gnu.org>
+
+	* install-info/tests/defs.in (mktemp): define minimal
+	replacement if not found in PATH.  It is lacking on AIX 6 (Ineiev)
+	and mingw (Eli).
+
+2012-11-28  Karl Berry  <karl@gnu.org>
+
+	* install-info/tests/defs.in (path_spec, EGREP): need these
+	for findprog.
+
+2012-11-26  Karl Berry  <karl@gnu.org>
+
+	* pretest 4.13.91.
+
+	* configure.ac: invoke gl_REGEX, after
+	gnulib-tool --add-import regex.  This will now be used on
+	all systems except recent-enough libc.
+
+	* doc/texinfo.txi (Command Syntax): Explicitly mention
+	whitespace after @-command names being (usually) ignored.
+
+	* doc/texinfo.txi (Not Ending a Sentence): Attempt
+	to document the sentence-ending heuristic more clearly.
+	Suggestion from Eli Zaretskii in <http://bugs.gnu.org/12973#14>,
+	draft from Paul Eggert in bug-texinfo 24 Nov 2012 18:02:27.
+
+	* install-info/defs.in (findprog): new fn, from texi2dvi.
+	* install-info/tests/ii-0050-test,
+	* install-info/tests/ii-0041-test: use it to check for zdiff
+	(not available on bare Solaris) and skip tests if needed.
+
+2012-11-25  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi: consistently use "uppercase" and "lowercase",
+	rather than with spaces or dashes.
+	
+	* system.h (const): do not #undef around gettext.h.
+	Suggested by Eli.  We'll see.
+
+2012-11-16  Eli Zaretskii  <eliz@gnu.org>
+	
+	* info/pcterm.c (gettextinfo): exit rather than xexit.
+	(tputs, tgoto, tgetent): use const.
+	* info/session.c [!FIONREAD]: require F_GETFL and F_SETFL as well
+	as O_NDELAY for this branch.
+	* info/terminal.c (tputs) [! HAVE_TERMCAP_H]: declare puts as
+	returning int.
+
+2012-11-23  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (makeinfo Pointer Creation): be more
+	explicit about what to do.  Suggestion from Richard Jackson,
+	help-texinfo 18 Feb 2003 23:54:07.
+
+2012-11-22  Patrice Dumas  <pertusus@free.fr>
+
+	* */*.pl */Makefile.am: use #! /usr/bin/env perl for shebangs in case
+	perl is not in /usr/bin.
+	Subbstitute $(PERL) in the shebang for scripts that are modified
+	using configure generated values.
+	* man/Makefile.am: remove $(srcdir) from targets.
+
+2012-11-20  Patrice Dumas  <pertusus@free.fr>
+
+	* Texinfo/Common.pm, Texinfo/Parser.pm, 
+	doc/texinfo.txi (Other Customization Variables): if 
+	IGNORE_SPACE_AFTER_BRACED_COMMAND_NAME is set (the default case),
+	spaces after an @-command name that take braces are ignored.
+	Report from John Darrington.
+
+2012-11-17  Patrice Dumas  <pertusus@free.fr>
+
+	* configure.ac, Pod-Simple-Texinfo/Makefile.am, doc/tp_api/Makefile.am:
+	new conditionals, BUILD_PERL_API_TEXI and POD_SIMPLE_TEXINFO_TESTS to
+	avoid rebuilding the texinfo files from pod documentnation if 
+	Pod::Simple::PullParser, and avoid running the Pod-Simple-Texinfo tests
+	if Test::More is not present.
+
+2012-11-17  Sergey Poznyakoff  <gray@gnu.org>
+
+	Use the text attribute to represent "image" tag.
+	Provide a general-purpose solution, so new tags can be easily
+	added.
+
+	This fixes bug #37686.
+
+	* info/tag.c: New file
+	* info/tag.h: New file
+	* info/Makefile.am: Add new files.
+	* info/dir.c: Use size_t instead of long to represent file size.
+	* info/display.c (handle_tag)
+	(handle_tag_start,handle_tag_end): Remove.
+	* info/display.h (handle_tag): Remove.
+	* info/filesys.c (filesys_read_info_file): Use size_t instead of
+	long to represent file sizes and offsets.
+	Call tags_expand to expand info tags.
+	(filesys_read_compressed): Do not call convert_eols, leave that
+	for filesys_read_info_file.
+	* info/filesys.h (filesys_read_info_file)
+	(filesys_read_compressed): Use size_t instead of
+        long to represent file sizes and offsets.
+	* info/info-utils.c (text_buffer_alloc): New function.
+	* info/info-utils.h (MIN_TEXT_BUF_ALLOC): New define.
+	(text_buffer_alloc): New proto.
+	(text_buffer_reset,text_buffer_base)
+	(text_buffer_off): New macros.
+	* info/nodes.c: Use size_t instead of long to represent file sizes
+	and offsets.
+	* info/nodes.h (FILE_BUFFER) <filesize>: Change type to size_t.
+	* NEWS: Update.
+	
+2012-11-16  Eli Zaretskii  <eliz@gnu.org>
+
+	Support for MS-Windows screen and keyboard in Info.
+	(bug-texinfo 17 Jan 2012 08:41:10 +0200)
+
+	* system.h (SET_SCREEN_SIZE_HELPER) [__MINGW32__]: Define.
+
+	* info/tilde.c (tilde_expand_word) [__MINGW32__]: Don't call
+	getpwuid or getpwnam; instead, consider "." as "home" if HOME is
+	not set in the environment.  Support tilde_expansion_failure_hook.
+
+	* info/terminal.c [_WIN32]: Include pcterm.h.
+	(terminal_initialize_terminal) [__MINGW32__]: Don't access
+	`ospeed'.
+	(terminal_prep_terminal, terminal_unprep_terminal) [__MINGW32__]:
+	Ifdef away the TIOC code for Windows.
+
+	* info/termdep.h [__MINGW32__]: Don't include sgtty.h.
+	[_WIN32]: Add a prototype for `sleep'.
+
+	* info/signals.c (redisplay_after_signal)
+	(reset_info_window_sizes): Make these 2 functions extern from
+	static, as they are called on MS-Windows from other files.
+
+	* info/session.c (read) [__MINGW32__]: Redirect read and _read to
+	w32_read.
+	(info_gather_typeahead) [__MINGW32__]: Call w32_chars_avail to
+	find out how many typeahead is available.
+
+	* info/pcterm.c <struct text_info, struct termios> [_WIN32]:
+	Definitions for the MS-Windows build.
+	(w32_info_prep, w32_info_unprep, w32_cleanup, w32_info_init)
+	(gettextinfo, textattr, textmode, ScreenGetCursor)
+	(ScreenSetCursor, ScreenClear, clreol, ScreenVisualBell)
+	(movetext, ScreenRows, ScreenCols, _set_screen_lines)
+	(w32_set_screen_dimensions) [_WIN32]: New; screen output and
+	cursor control functions for MS-Windows.
+	(sleep, w32_our_tty, define_seq, w32keyseq, w32_kbd_read)
+	(w32_chars_avail, w32_read) [_WIN32]: New; keyboard input
+	functions and their subroutines for MS-Windows.
+	(pc_prep_terminal) [_WIN32]: Call w32_info_prep.
+	(pc_unprep_terminal) [_WIN32]: Call w32_info_unprep.  Restore the
+	screen buffer size to what we found on startup.
+	(pc_initialize_terminal) [_WIN32]: Let term_name be "w32console".
+	Condition MSDOS key definitions on __MSDOS__.
+	(kill) [_WIN32]: Don't clear the screen and don't write "stopped"
+	message on MS-Windows.  Special suspend code for MS-Windows.
+
+	* info/man.c [__MINGW32__]: Don't include sys/ioctl.h.
+
+	Fix a crash in viewing man pages.
+
+	* info/man.c (get_manpage_contents) [!PIPE_USE_FORK]: Fix a
+	crasher due to addition of "-a" to the man command line arguments.
+
+	Miscellaneous MS-Windows related fixes.
+
+	* info/infokey.c (main): On MS-Windows, consider the current
+	directory a "home" if HOME is not defined in the environment.
+
+	* info/infomap.c (fetch_user_maps): Likewise.
+
+	* info/info.c <option long_options>: Enable the speech-friendly
+	options on MS-Windows as well.
+	(main): Likewise.
+
+	* info/dir.c (new_dir_file_p): Don't optimize the test for a new
+	file when the inode is zero (MS-Windows).
+
+2012-11-16  Karl Berry  <karl@gnu.org>
+
+	* pretest 4.13.90.
+	
+	* tp/Makefile.am,
+	* tp/maintain/regenerate_document_strings_make_rules.sh,
+	* tp/tests/run_parser_all.sh: avoid \+ with sed, not
+	supported by BSD sed.
+
+2012-11-16  Patrice Dumas  <pertusus@free.fr>
+
+	* configure.ac, tp/defs.in, tp/maintain/all_tests.sh, 
+	tp/tests/run_parser_all.sh, tp/tests/many_input_files/indices.sh,
+	tp/tests/many_input_files/tex_l2h.sh, tp/tests/many_input_files/tex_t4ht.sh:
+	Use PERL from configure, with the value put in tp/defs.in by configure
+	instead of tp/tests/path_separator.in.
+	* tp/tests/path_separator.in: remove.
+	* tp/tests/nested_formats/Makefile.am: do not distribute 
+	generate_all_texi.pl.
+
+2012-11-13  Karl Berry  <karl@gnu.org>
+
+	* configure.ac (PERL): check for it up front.
+	Will anyone want to build Texinfo without makeinfo?  We'll see.
+	
+	* doc/Makefile.am (EXTRA_DIST): missed \ at end of variable list.
+	Why wasn't this an error with GNU make?  Didn't investigate.
+
+	* tp/maintain/regenerate_file_list.pl,
+	* tp/maintain/regenerate_document_strings_make_rules.sh: do not
+	generate rules using $<.
+
+	* doc/Makefile.am (wwwdoc-build, wwwdoc-install): new targets
+	for updating the manuals on the web.
+	
+	* doc/texinfo.txi (makeinfo options): lowercase o options
+	in compatibility @anchor, since that's what the 4.13 manual had.
+
+	* tp/tests/tex_html_tests.sh, long_tests.sh, parser_base_tests:
+	avoid [ ... ] and test ... -a ...
+	* install-info/tests/*.test: use -x for better logging.
+	Suggestion from Stefano, texinfo-devel 11 Nov 2012 10:43:02.
+
+2012-11-10  Patrice Dumas  <pertusus@free.fr>
+
+	* */Makefile.am: add $(srcdir) for out of source build when
+	needed.
+	* doc/tp_api/Makefile.am: use a variable instead of $^ which is
+	not portable.
+	* tp/.cvsignore: ignore *.trs and *.log.
+	* TODO: update
+	* tp/tests/*/*.sh, tp/tests/run_parser_all.sh: do a chmod on 
+	files copied from the source directory, for instance to have
+	them removed by clean targets.
+
+2012-11-10  Karl Berry  <karl@gnu.org>
+
+	* */Makefile.am: laboriously+manually+redundantly expand $< in
+	non-suffix rule.
+
+	* install-info/tests/defs.in: set CDPATH before unsetting,
+	to placate BSD sh.  From Stefano.
+	* install-info/tests/ii-0053-test: avoid -e.
+
+	* configure.ac (AM_INIT_AUTOMAKE): use parallel-tests,
+	as recommended by Stefano Lattarini.  Require automake 1.12.
+	* build-aux/test-driver: new file to support it.
+	* .cvsignore: ignore *.trs and *.log in test dirs.
+
+2012-11-09  Karl Berry  <karl@gnu.org>
+
+	* configure.ac: remove MKDIR_P fallback.
+	* texi2html/Makefile.am,
+	* tp/Makefile.am: consistently use $(mkdir_p) rather than $(MKDIR_P).
+	
+	* Run gnulib-tool --import, srclist.txi.
+
+2012-11-08  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (@indentedblock): new node for new command.
+	(Quotations and Examples, small): mention @smallindentedblock.
+	(Command List): include these two new commands.
+	* doc/refcard/txirefcard.tex: likewise.
+	* NEWS: likewise.
+	* doc/texinfo.tex (\indentedblockstart, \Eindentedblock,
+	\Esmallindentedblock): new macros to implement them.
+	(\quotationstart): can call \indentedblockstart now.
+
+2012-10-27  Karl Berry  <karl@gnu.org>
+
+	* util/gendocs.sh: remove PostScript generation, redundant with 
+	(and worse than) pdf, these days.
+	* util/gendocs_template,
+	* util/gendocs_template_min,
+
+2012-10-27  Akim Demaille  <akim@lrde.epita.fr>
+        and Karl Berry  <karl@gnu.org>
+
+	* util/gendocs.sh (copy_images): new function, Perl code to
+	extract images from output HTML and copy them to the output dir.
+	(mail of 26 Oct 2012 09:39:53).
+
+2012-09-23  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Other Customization Variables): CHECK_HTMLXREF
+	not set by default; other tweaks.
+
+2012-09-21  Karl Berry  <karl@gnu.org>
+
+	* tp/tests/parser_tests.sh,
+	* tp/tests/run_parser_all.sh: export var=val not portable.
+
+2012-09-21  Karl Berry  <karl@gnu.org>
+
+	* doc/refcard/Makefile (ccheck, vcheck): pass txi_check_args
+	(from environment), for my cron.
+	* doc/refcard/ccheck: recognize --no-common to output only problems.
+	* doc/refcard/vcheck: likewise, and omit OUTPUT_PERL_ENCODING from
+	check.
+	* doc/texinfo.txi (Other Customization Variables): document
+	remaining variables.
+
+2012-09-15  Patrice Dumas  <pertusus@free.fr>
+
+	* doc/texinfo.txi (texi2any Output Customization): remove 
+	anything related to API description, put it in 
+	draft_api.texi, it is not stable enough for now.
+
+2012-09-15  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Print with @code{lpr}),
+	(Format with @code{texi2dvi}),
+	(@code{@@pagesizes}): use @code in node names.
+
+2012-09-14  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Inline Conditionals): rename from Inline
+	Conditional Commands.
+	(Testing for Texinfo Commands): new node describing
+	@ifcommanddefined, @ifcommandnotdefined, txicommandconditionals.
+	* doc/refcard/txicmdcheck: handle checking for them.
+	* doc/refcard/txirefcard.tex: list them.
+	* NEWS: likewise.
+
+2012-09-13  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Macro Details): yet more sticky points
+	regarding commas and multiple-argument macros.
+	Mail from Patrice, 25 Jul 2012 10:21:28.
+
+2012-09-13  Patrice Dumas  <pertusus@free.fr>
+
+	* doc/refcard/txivarcheck (read_tp): filter out customization 
+	variables that are internal for the Parser and documented
+	in the Parser, and variables that may only be set in
+	init files as they are arrays or hashes.
+
+2012-09-12  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\markupsetuplqkbd, \markupsetuprqkbd):
+	use \markupsetcodequoteleft and right, like all the others.
+        (\markupsetnoligaturesquoteleft): no longer needed.
+        (\kbdsub): rename from \kbdfoo, reformat.
+        Other doc tweaks.
+	* doc/texinfo.txi (Inserting Quote Characters): @kbd now also
+	respects @codequote*.
+	Suggestion from Patrice, texinfo-devel 14 Aug 2012 00:03:54.
+
+	* doc/texinfo.txi (verb): make example input match output.
+	Report from christophe.jarry, 12 Sep 2012 13:49:27.
+
+	* doc/refcard/txivarcheck: new script to check customization
+	variables implemented vs. documented, similar to txicmdcheck.
+
+2012-09-10  Patrice Dumas  <pertusus@free.fr>
+
+	* util/texinfo.dtd: update.
+
+2012-09-10  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Overview): mention txixml2texi.
+
+	* doc/texinfo.txi (Functions Commands): recommend @code rather
+	than @var to avoid en-dashes and em-dashes (and Spanish ligatures)
+	in formal parameter names containing 2+ hyphens.
+
+2012-09-10  Patrice Dumas  <pertusus@free.fr>
+
+	* util/Makefile.am, util/txixml2texi.pl, TODO: add a new script,
+	txixml2texi that convert Texinfo XML to Texinfo code.
+
+2012-09-09  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (acronym): mention likely desirability
+	of not using it, and that is the recommendation for GNU manuals.
+	Suggestion from John Darrington, 24 Aug 2012 06:53:29.
+
+	* doc/texinfo.txi (table): new commands defined with @macro
+	don't usually work as the argument to @table.
+	(@@asis): Use @code{@@asis} for anchor name.
+
+2012-09-08  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (txicmd): skip putting @-commands in a new
+	index, just keep using fn and put up with the @def... example
+	identifiers showing up there.
+	(throughout): consistently use whole-manual cross references.
+
+2012-09-07  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (title subtitle author): @* breaks in the title
+	will be respected in HTML unless conditionalized.
+
+	* doc/texinfo.txi: "an @code{@@", not "a" throughout; ditto @samp.
+
+2012-09-06  Patrice Dumas  <pertusus@free.fr>
+        and Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi: updates throughout.
+	Use @. where needed.
+
+2012-09-05  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\chapheadingzzz, \chapmacro): use
+	\raggedtitlesettings, do more to avoid breaks after.
+	(\unnchfopen, \centerchfopen): likewise, although these chapter
+	styles are not used and not supported.
+
+2012-09-04  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\raggedtitlesettings): new macro.
+	(\title): call it, and typeset the title inside a \vbox,
+	so a long title can be broken with @*
+	(\*): \unskip to remove preceding glue, since we're going
+	to break the line anyway.  Can make a difference especially inside
+	\title.
+
+2012-09-04  Patrice Dumas  <pertusus@free.fr>
+        and Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Quotations and Examples): general updates.
+
+2012-09-03  Patrice Dumas  <pertusus@free.fr>
+        and Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Breaks, Insertions): general updates.
+
+2012-09-02  Karl Berry  <karl@gnu.org>
+
+	* util/gendocs.sh (--info): new option, defaults to --no-split
+	since split Info files are unlikely to be needed these days.
+	Suggestion from Akim Demaille, bug-automake mail 31 Aug 2012 19:03:16.
+
+2012-08-28  Patrice Dumas  <pertusus@free.fr>
+        and Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Definition Commands): general updates.
+
+2012-08-26  Patrice Dumas  <pertusus@free.fr>
+        and Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Internationalization): general updates.
+
+2012-08-25  Patrice Dumas  <pertusus@free.fr>
+        and Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Conditionals, Defining New Texinfo Commands,
+	Include Files, Hardcopy): general updates throughout the chapters.
+
+2012-08-24  Patrice Dumas  <pertusus@free.fr>
+        and Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Generic Translator texi2any): general
+	updates throughout the chapter.
+
+2012-08-23  Patrice Dumas  <pertusus@free.fr>
+        and Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Creating and Installing Info Files): general
+	updates throughout the chapter.
+
+2012-08-13  Werner Lemberg  <wl@gnu.org>
+
+	* doc/texinfo.tex (\ecfont): test for monospace,
+	so we can get a typewriter thorn, etc.
+	
+2012-08-13  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (HTML Xref Command Expansion): U+21A6
+	for @expansion{}.  Other unrelated text tweaks.
+
+2012-07-29  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\file, \option): \let to \code, not \samp.
+	(\indicateurl): \let to \samp, not \code.
+	* doc/texinfo.txi (env, file, option): document this.
+
+2012-07-22  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (HTML Xref 8-bit Character Expansion): English.
+
+2012-07-22  Per Bothner  <per@bothner.com>
+
+	* tp/Texinfo/Convert/DocBook.pm: Add phrase element around category,
+	for easier processing of the output.
+
+2012-07-14  Andreas Schwab  <schwab@linux-m68k.org>
+
+	* info/info-utils.c (text_buffer_vprintf): Create a copy of `ap' in
+	the loop to avoid use after destruction.
+	Report from Patrice, 13 Jul 2012 23:31:10.
+
+2012-07-13  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (HTML Xref Command Expansion): Clarify/unify
+	treatment of @acronym, @abbr, @email, @image.
+	(texinfo-devel 8 Jul 2012 09:38:25)
+
+2012-07-06  Karl Berry  <karl@gnu.org>
+
+	Avoid "may be used uninitialized" warnings from gcc.
+	* info/infokey.c (compile): initialize seqstate.
+	* info/window.c (process_node_text): initialize carried_over_len,
+	carried_over_count, replen.
+	(Not sure if they actually can be used uninitialized, but seems
+	harmless to initialize them and avoid the warnings, anyway.)
+
+	* doc/texinfo.tex (@ifcommanddefined, @ifcommandnotdefined): new
+	prospective conditionals, not confirmed
+	(txicommandconditionals): implicitly @set this variable.
+
+	* doc/texinfo.txi (Node Line Requirements): discuss commands in
+	node names.
+	(Two Paths): merge into Texinfo Document Structure, with @anchor.
+	(Node Line Tips): merge into Node Names, with anchor.
+	(Node Menu Illustration): try making last in chapter.
+
+2012-06-19  Patrice Dumas  <pertusus@free.fr>
+        and Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Beginning a File): general updates
+	throughout the chapter.
+
+2012-07-04  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Software Copying Permissions): remove node.
+	(Document Permissions): add replacement text.
+	Suggestion from Patrice.
+
+2012-07-03  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Overview): general updates
+	throughout the chapter, most suggested by Patrice,
+	texinfo-devel 21 May 2012 01:01:24.
+	(Texinfo Document Structure): new section/node.
+
+2012-06-29  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (top command): new node, merging the
+	mostly-redundant information from the nodes:
+	(makeinfo top command, makeinfo top): remove these.
+	Leave anchors with the old node names behind.
+
+2012-06-19  Patrice Dumas  <pertusus@free.fr>
+        and Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Chapter Structuring): general updates
+	throughout the chapter.
+
+2012-06-19  Patrice Dumas  <pertusus@free.fr>
+        and Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Nodes): general updates throughout
+	the chapter.
+
+2012-06-19  Patrice Dumas  <pertusus@free.fr>
+        and Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Menus): general updates throughout
+	the chapter.
+
+2012-06-15  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi: remove all now-unnecessary @refill's
+	and @ignore blocks relating to the long-gone @ctrl, @br, etc.,
+	for source clarity.
+
+2012-06-14  Patrice Dumas  <pertusus@free.fr>
+        and Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Cross References): remove @refill,
+	take better account of HTML, general updates throughout
+	the chapter.
+
+2012-06-11  Karl Berry  <karl@gnu.org>
+
+	* util/htmlxref.cnf (libcdio, cd-text, sharutils): add.
+	Found by Trevis Rothwell.
+
+	* info/*.c,
+	* util/texindex.c,
+	* install-info/install-info.c: use exit with EXIT_SUCCESS or
+	EXIT_FAILURE instead of xexit.
+	* lib: no longer need this directory.
+	* */Makefile.am, Makefile, configure.ac: do not refer to it.
+
+2012-06-05  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\txiescapepdf): check \pdfescapestring
+	against \thisisundefined, not \relax.  Of course.
+	Bug report from Marco Maggi, 05 Jun 2012 12:07:02.
+
+2012-05-27  Patrice Dumas  <pertusus@free.fr>
+
+	* README: remove the reference to the removed INTRODUCTION file.
+
+2012-05-25  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Inserting a Backslash): use @backslashchar{}
+	in the example, not @comma{}.
+	Report from Werner, 24 May 2012 12:56:58.
+
+2012-05-22  Karl Berry  <karl@gnu.org>
+
+	* README: updates for texi2any.
+	
+	* INTRODUCTION: remove; seems unnecessary with all else now.
+	* Makefile.am (EXTRA_DIST): remove it.
+
+2012-05-17  Patrice Dumas  <pertusus@free.fr>
+
+	* doc/Makefile.am (TXI_XLATE): correct txi-nl.tex name that was
+	wrongly set to tex-nl.tex.
+
+2012-05-16  Andreas Schwab  <schwab@linux-m68k.org>
+
+	* doc/texinfo.tex (\skipspaces): Remove reference to undefined
+	macro \p.
+
+2012-05-15  Werner Lemberg  <wl@gnu.org>
+
+	* doc/txi-hu.tex: Hungarian translation for texinfo.tex.
+	Taken from LilyPond documentation.
+
+	* doc/Makefile.am (TXI_XLATE): add txi-hu.tex.
+
+	* NEWS: Mention it.
+
+2012-04-24  Karl Berry  <karl@gnu.org>
+
+	* doc/Makefile.am (TXI_XLATE): add txi-nn.tex.
+
+	* doc/refcard/txirefcard.tex: node pointers are optional.
+
+	* doc/texinfo.txi (Node Line Requirements): don't use the non-word
+	"nodename".  Internal whitespace is collapsed.
+	
+	* doc/texinfo.txi (#line and TeX, Use TeX, Obtaining TeX,
+	Preparing for TeX, Debugging with TeX): use @TeX{} in node names
+	and thus simplify cross references.  Does not change Info node names,
+	hence no need to leave @anchors behind.
+	
+	* doc/texinfo.txi: update master menu.
+
+2012-04-23  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Output Formats): add PostScript item.
+	(Invoking texi2any): add options passed to texi2dvi.
+	(texi2any Printed Output): new node.
+	(Format with texi2dvi): mention --ps and --dvipdf.
+
+2012-04-22  Karl Berry  <karl@gnu.org>
+
+	* README-hacking: rename from README.dev, for more consistency.
+
+2012-04-21  Patrice Dumas  <pertusus@free.fr>
+
+	* doc/texinfo.txi (Other Configuration Variables): add
+	BASEFILENAME_LENGTH.
+	(HTML Xref Link Basics): explain that file names 
+	are truncated.
+	* tp/Texinfo/Common.pm, tp/Texinfo/Convert/Converter.pm,
+	tp/Texinfo/Convert/HTML.pm (_id_to_filename): add
+	IBASEFILENAME_LENGTH and use it to truncate base
+	filenames.
+	* tp/Texinfo/Parser.pm tp/t/*: @verb is not accepted in 
+	simple text commands and sectioning commands.
+
+2012-04-20  Julian Gilbey  <julian@d-and-j.net>  (tiny change)
+
+	* info/footnotes.c,
+	* info/infodoc.c,
+	* info/infomap.c,
+	* info/session.c: use "%s" as first arg to info_error,
+	even with constant strings, to pacify -Wformat-security.
+	http://bugs.debian.org/656659.
+
+2012-04-20  Karl Berry  <karl@gnu.org>
+
+	* util/texi2dvi: more doc on --dvipdf, spelling.
+	* tp/texi2any.pl: new option --dvipdf.
+
+	* doc/texinfo.txi (Invoking texi2any) <--macro-expand>:
+	mention that it implies passing -E to texi2dvi, when requested.
+	(Invoking texi2any): sync with current --help, except for texi2dvi
+	options.
+
+2012-04-19  Patrice Dumas  <pertusus@free.fr>
+
+	* configure.ac, tp/tests/*: move tex4ht and latex2html related tests to
+	long checks.
+
+2012-04-18  Karl Berry  <karl@gnu.org>
+
+	* install-info/README: Debian now uses our install-info,
+	per Norbert Preining.  Yay!
+
+2012-04-17  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Tips): mention texi-elements-by-size (for usage).
+	(Reference Implementation): likewise (for an example); also texi2html.
+	* util/texi-elements-by-size: allow invocation from anywhere.
+	{ on same line as sub?
+
+2012-04-16  Karl Berry  <karl@gnu.org>
+
+	* util/texi-elements-by-size: renamed from
+	texi_sort_elements_count.pl and texinfo configure variables removed.
+
+2012-04-13  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Command Contexts): clarify @shortcaption, etc.
+	(Top Node Naming): revisit whole-manual xref text.
+	(Other Configuration Variables) [KEEP_TOP_EXTERNAL_REF]: Englishing.
+
+	* tp/texi2any.pl (configured_version): add +dev to distinguish
+	from installed.
+
+2012-04-12  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	info: improve parsing of node names containing dots.
+
+	References to node names containing dots are followed correctly,
+	if they appear in menus or in single-argument xrefs (which produce
+	references followed by double-column).
+
+	* info-utils.h (PARSE_NODE_DFLT, PARSE_NODE_SKIP_NEWLINES)
+	(PARSE_NODE_VERBATIM, PARSE_NODE_START): New constants.
+	* info/info-utils.c (info_parse_node): Change the meaning of the
+	second argument.  All uses updated.
+	(save_string, saven_string): Allow for string_size_p==NULL.
+	* info/nodes.c (info_get_node): Take three arguments, the last
+	one instructing how to parse the node name.
+	All uses updated.
+	* info/nodes.h (info_get_node): Change signature.
+	* info/search.c (skip_node_characters): Second argument controls
+	what characters can end the node name.
+	All uses updated.
+	* info/search.h (DONT_SKIP_NEWLINES,SKIP_NEWLINES): Removed.
+	All uses changed.
+
+2012-04-10  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (History): amend texi2any description per Patrice.
+	(Reference Implementation): new node with the rationale/role text.
+
+	* doc/texinfo.txi (Command Contexts): new node, giving a guide
+	(essentially from Patrice) as to which commands can be used where.
+
+2012-04-08  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (node): explain further that TeX requires both a
+	@node line and a sectioning command to make cross references.
+
+2012-04-06  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\crossmanualxref): new macro.
+	(\xrefX): call it, to handle cross-manual xrefs, whether with a
+	printed manual name (arg 5) or just an info filename (arg 4).
+	(\infofilenamebox, \infofilename): new macros.
+	(\toprefbox): rename from \topbox.
+
+2012-03-31  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\commondummiesnofonts): add \inforef.
+
+	* README.dev: more about running texi2any.pl from development.
+
+2012-03-30  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (\indexnofonts): sort keys for @lbracechar
+	and @rbracechar.
+	(\commondummies): handle @lbracechar @rbracechar @abbr @image.
+	All found by Patrice, tests 5, 6, 22, 24, 26.
+
+2012-03-11  Samuel Bronson  <naesten@gmail.com>  (tiny change)
+
+	* doc/texinfo.tex (\getfilename): \edef the argument first
+	so @value can be expanded.
+	(\xrefX): call \makevalueexpandable.
+	#35793, bug-texinfo 11 Mar 2012 21:17:45.
+
+2012-02-28  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\center): use \centersub rather than \next.
+	(\centerV): reinsert \parskip if after a section heading.
+	(\imagexxx): if inside \centerV, put the image inside a \vbox.
+	Report from Vincent Belaiche.
+
+2012-02-26  Patrice Dumas  <pertusus@free.fr>
+
+	* doc/texinfo.txi (Configuration Variables), tp/Texinfo/Common.pm,
+	tp/texi2any.pl, TODO: new transformations 
+	insert_nodes_for_sectioning_commands, complete_tree_nodes_menus
+	and regenerate_master_menu.
+
+2012-02-23  Patrice Dumas  <pertusus@free.fr>
+
+	* configure.ac, tp/t/test_utils.pl, tp/README: use Storable::dclone 
+	instead of Clone::clone since it is in core perl since 5.007003.
+	Also it seemed more faster when I checked.
+
+2012-02-23  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Output Formats): expand the text on writing
+	new back-ends vs. a new programs; idea and basis from Patrice.
+
+2012-02-22  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (#line Syntax Details): update for new regexp,
+	requiring the "filename" be present with trailing flags.
+	Not 100% sure about cpp's behavior here, but that's what
+	we've observed so far.
+
+2012-02-21  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi: more on alternate implementations.
+
+2012-02-20  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (texi2html): new node, describing past,
+	present, future of texi2html.
+
+	* doc/texinfo.txi (Obtaining TeX): update a bit, keep
+	www.gnu.org/prep/FTP in sync.
+
+	* NEWS, doc/texinfo.txi (Generic Translator texi2any): clarify
+	that there are no differences based on the program name (makeinfo
+	vs. texi2any).  Also, call it "the" translator instead of just "a"
+	and explain why.
+
+2012-02-17  Patrice Dumas  <pertusus@free.fr>
+
+	* doc/texinfo.txi (Configuration Variables): update DEBUG and SHORTEXTN
+	to be in line with current meanings.  Document the 
+	move_index_entries_after_items transformation.
+
+2012-02-16  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (#line Directive): mention CPP_LINE_DIRECTIVES,
+	and #line not recognized in verbatim.
+	(#line Syntax Details): update regexp, discuss surprising
+	false positives.
+	(Contents): must come before any sectioning command.
+	(#line and TeX): reorganize as a list.
+
+2012-02-10  Patrice Dumas  <pertusus@free.fr>
+
+	* autogen.sh, tp/.cvsignore, tp/Makefile.am, 
+	maintain/regenerate_document_strings_make_rules.sh,
+	maintain/regenerate_file_lists.pl: replace unconditional copy by
+	generated make rules.
+
+2012-02-07  Patrice Dumas  <pertusus@free.fr>
+
+	* doc/texinfo.txi, tp/Texinfo/Common.pm, tp/texi2any.pl,
+	tp/Texinfo/Convert/PlainTexinfo.pm, tp/Makefile.am: new converter,
+	converting the tree to Texinfo.  Add a FIX_TEXINFO customization
+	variable for this converter, set in the default case.
+	* doc/texinfo.txi (Configuration Variables), tp/Texinfo/Common.pm, 
+	tp/texi2any.pl:
+	new customization variable, TREE_TRANSFORMATIONS, to specify
+	transformations done to the tree before output.
+
+2012-02-05  Patrice Dumas  <pertusus@free.fr>
+
+	* doc/texinfo.txi (Configuration Variables), tp/Texinfo/Common.pm,
+	tp/Texinfo/Convert/HTML.pm(_convert_image_command), 
+	tp/Texinfo/Convert/Converter.pm(%all_converters_defaults): new 
+	configuration variable to prepend a path to images in HTML,
+	IMAGE_LINK_PREFIX.  Report from Vincent Bela\"iche.
+
+2012-01-28  Patrice Dumas  <pertusus@free.fr>
+
+	* doc/texinfo.txi (Configuration Variables): RAW_TEXT becomes RAWTEXT.
+	TEXI2HTML is now a normal configuration variable.
+	Configuration variables for program behavior may also be set normally,
+	however they will have an effect only if set on the command line.
+	* tp/TODO, tp/texi2any.pl, tp/Texinfo/Common.pm,
+	tp/Texinfo/Convert/HTML.pm (converter_defaults): handle configuration 
+	variables for program behavior more like other variables and formats.
+
+2012-01-27  Patrice Dumas  <pertusus@free.fr>
+
+	* configure.ac (AC_CONFIG_FILES), tp/tests/encodings, 
+	tp/tests/formatting/: tests in encodings that have not be moved
+	to the main test suite are moved to tp/tests/formatting.
+
+2012-01-25  Patrice Dumas  <pertusus@free.fr>
+
+	* util/texi2html: new script to convert Texinfo to HTML, setting the 
+	default style to be the texi2html style.
+
+2012-01-24  Patrice Dumas  <pertusus@free.fr>
+
+	* tp/Texinfo/Convert/Plaintext.pm, tp/Texinfo/Convert/Unicode.pm,
+	tp/Texinfo/Convert/XML.pm, util/texinfo.dtd: ` becomes ' in plaintext
+	to follow the GNU coding standards change.  ` and ' are translated
+	to unicode characters in XML and when @documentencoding is utf-8 and
+	enable-encoding is set.
+
+2012-01-22  Patrice Dumas  <pertusus@free.fr>
+
+	* tp/Texinfo/Convert/HTML.pm (_convert_xref_commands), 
+	tp/Texinfo/Convert/DocBook.pm:
+	implement the new convention for five-arg xref with either 
+	just Top or no node name.
+	* tp/Texinfo/Convert/HTML.pm, texi2any.pl, tp/Texinfo/Common.pm:
+	For HTML, add a customization variable, KEEP_TOP_EXTERNAL_REF.
+	If set the Top node is not ignored for the reference for the 
+	five-arg xref.
+	* doc/texinfo.txi (Other Configuration Variables): document
+	KEEP_TOP_EXTERNAL_REF.
+
+2012-01-20  Karl Berry  <karl@gnu.org>
+
+	* doc/NEWS: new convention to allow referring to a whole manual
+	without a node: a five-arg xref with either just Top or no node name.
+	* doc/texinfo.txi (Top Node Naming): document it.
+	(Four or Five Arguments): refer to it.
+	Also use that new feature throughout, and assorted other cleanups.
+	* doc/texinfo.tex (\xrefX): implement it.
+	(\topbox, \printedrefnamebox, \printedmanualbox): use these
+	named boxes instead of numeric ones.
+	* doc/info-stnd.texi: refer to whole manuals.
+
+2012-01-18  Patrice Dumas  <pertusus@free.fr>
+
+	* configure.ac, Makefile.am (SUBDIRS), Pod-Simple-Texinfo: add a
+	pod to texinfo converter.
+
+2012-01-18  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Configuration Variables for Program Behavior):
+	split out into new node, other text tweaks.
+
+2012-01-17  Patrice Dumas  <pertusus@free.fr>
+
+	* TODO, tp/TODO: clean tests related TODO parts.
+
+2012-01-16  Patrice Dumas  <pertusus@free.fr>
+
+	* util/detexinfo, util/Makefile.am: new script to strip @-commands.
+
+	* doc/texinfo.txi (Configuration Variables): document TEXTCONTENT
+	and RAW_TEXT.
+
+	* tp/texi2any.pl: if SORT_ELEMENT_COUNT is set, dump elements names
+	sorted by line count (or word count if ISORT_ELEMENT_COUNT_COUNT_WORDS
+	is set) in the associated file.
+	* doc/texinfo.txi (Configuration Variables): document
+	SORT_ELEMENT_COUNT and SORT_ELEMENT_COUNT_COUNT_WORDS.
+
+2012-01-15  Patrice Dumas  <pertusus@free.fr>
+
+	* doc/texinfo.txi (Configuration Variables for @@-Commands):
+	remove @-commands that have no effect and add new @-commands available
+	as customization options.
+
+	* tp/texi2any.pl, tp/Texinfo/Convert/TextContent.pm,
+	tp/Makefile.am, TODO: 
+	New converter that strips commands from output.
+
+2012-01-14  Patrice Dumas  <pertusus@free.fr>
+
+	Move tests from texi2html that are still relevant to tp.
+
+	* configure.ac (AC_CONFIG_FILES): Add tp/tests Makefiles.
+	* tp/Makefile.am (SUBDIRS),
+	* tp/tests: New directory for tests.
+
+2012-01-14  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	Use literal matching when searching for xrefs or menu items.
+	
+	* info/nodes.c (adjust_nodestart): Reset body_start.
+	* info/session.c (info_toggle_regexp): Minor change.
+	(info_menu_or_ref_item): Set cursor at the start of
+	the body if the search fails.
+	(info_search_in_node_internal): Take additional argument
+	indicating whether to use regexp matching. All uses changed.
+	(info_search_in_node): Likewise.
+	(info_target_search_node): Use additional argument to mask
+	use_regex flag. All uses changed.
+	(info_menu_or_ref_item): Mask out use_regex.
+	* info/session.h (info_search_in_node)
+	(info_target_search_node): Change prototypes.
+	
+	* info/indices.c (info_next_index_match): Update.
+	* info/footnotes.c (make_footnotes_node): Update.
+
+2012-01-12  Karl Berry  <karl@gnu.org>
+
+	* util/texi2dvi (run_makeinfo): put the whole version check
+	subshell into the if condition, else the oh-so-helpful set -e
+	defeats the check for a broken texinfo.tex.
+	Report from Jim Meyering, 09 Nov 2011 20:43:08,
+	help from Eric Blake, 9 Nov 2011 21:59:33.
+
+	* util/texi2dvi (move_to_dest): support --output in non-clean modes.
+
+	* util/tests/automtest.sh: manual test from automake, via
+	Stefano Lattarini, texinfo-devel 10 Jan 2012 10:27:55.
+
+2012-01-10  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (External Macro Processors,
+	#line Directive,
+	#line and TeX,
+	#line Syntax Details): new nodes.
+
+	Also, use http://ftp.gnu.org in examples per sysadmin recommendation.
+
+2012-01-08  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Internationalization): move to above Conditionals,
+	so set clear value and Defining New Texinfo Commands are next
+	to each other.
+
+2012-01-07  Karl Berry  <karl@gnu.org>
+
+	* util/texi2dvi: do not use && and || as line continuations,
+	cute as it is.  Use -v also when debugging.
+
+2012-01-06  Patrice Dumas  <pertusus@free.fr>
+
+	* util/texinfo.dtd: adapt raw block commands content to what can
+	really be in those commands.
+	Add inlineraw, inlinefmt.
+	Better handling of commands defined with @definfoenclose and
+	errormsg.
+
+2012-01-03  Karl Berry  <karl@gnu.org>
+
+	* NEWS: new command @hashchar{}.
+	* doc/texinfo.txi (Inserting Special Characters): rename node again.
+	(Inserting a Hashsign),
+	(External Macro Processors): new node.
+	* doc/refcard/txirefcard.tex: document it.
+        * doc/texinfo.tex (@hashchar): output a #.
+        * util/texinfo.dtd: add entity.
+
+2011-12-31  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi,
+	* doc/refcard/txirefcard.tex,
+	* install-info/install-info.c,
+	* info/info.c,
+	* info/infokey.c,
+	* util/texindex.c,
+	* util/texi2dvi,
+	* util/gendocs_template,
+	* util/gendocs_template_min: 2012.
+
+2011-12-30  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Marking): make the @chapter title be
+	Making Text, ...
+	(Command List): xref punctuation warning.
+
+2011-12-28  Karl Berry  <karl@gnu.org>
+
+	* util/htmlxref.cnf (GDBM, mailutils, readline): new entries
+	from Sergey.
+
+2011-12-27  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	Bugfixes.
+	
+	* info/echo-area.c (info_read_completing_internal): Initialize
+	window line map before the loop, otherwise the previous contents
+	is used to compute cursor position.
+	* info/indices.c (info_virtual_index): Report and return
+	immediately if there are no indices in the document.
+
+2011-12-27  Karl Berry  <karl@gnu.org>
+
+	* NEWS: mention Info's virtual-index.
+	* doc/refcard/txirefcard.tex: likewise.
+	* doc/info-stnd.texi (Searching Commands): tweak text.
+	* info/infodoc.c: add to initial command list in help text.
+
+2011-12-26  Karl Berry  <karl@gnu.org>
+
+	* NEWS: new commands @atchar{} @lbracechar{} @rbracechar{}
+        @backslashchar{}.
+	* doc/texinfo.txi (Atsign Braces Comma Backslash): rename node,
+	leave @anchor behind.
+	(Inserting an Atsign),
+	(Inserting Braces),
+	(Inserting a Backslash),
+	(math),
+	* doc/refcard/txirefcard.tex: document them.
+        * doc/texinfo.tex (@normalbackslash): output a typewriter \
+        even in math mode.
+
+2011-12-25  Karl Berry  <karl@gnu.org>
+
+	* NEWS: new commands @inlinefmt and @inlineraw.
+	* doc/texinfo.txi (Inline Conditional Commands),
+	* doc/refcard/txirefcard.tex: document them.
+	* doc/texinfo.tex (\inlinefmt, \doinlinefmt,
+        \inlineraw, \doinlineraw, \doinlinerawtwo, \outfmtnametex): new macros.
+        
+        * doc/texinfo.tex (\atchar, \lbracechar, \rbracechar, \backslashchar):
+        more new macros for forthcoming new commands.
+
+2011-12-24  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\errormsg): \indexnofonts rather than \indexdummies.
+	
+	* doc/texinfo.tex (\txiescapepdf): new macro, using the pdftex
+	primitive \pdfescapestring.
+	(\backslashparens, \activebackslashdouble, \HyPsdSubst,
+        \HyReturnAfterFi): no longer needed.  change calls.
+        
+        * doc/texinfo.tex (\dopdfoutline): output (literal) brace chars;
+        previous hack had become inoperative.
+	(\lbracecharliteral, \rbracecharliteral): new macros.
+
+2011-12-23  Karl Berry  <karl@gnu.org>
+
+	* NEWS: new command @errormsg.
+	* doc/texinfo.tex (\errormsg): new command.
+	(\commondummiesnofonts): add \anchor for the heck of it.
+	* doc/texinfo.txi (@@-Command List): add it.  
+	* doc/refcard/txirefcard.txi (Ending): likewise.
+
+	* doc/texinfo.txi (Generic Translator texi2any): rename node.
+	(Invoking makeinfo): leave anchor behind.
+	(Glyphs summary): remove spurious menu.
+	Other small wording changes.
+
+2011-12-08  Patrice Dumas  <pertusus@free.fr>
+
+	* TODO: add automatic generation of @node and @menu.
+
+2011-12-04  Patrice Dumas  <pertusus@free.fr>
+
+	* doc/texinfo.txi (Other Configuration Variables): document
+	all configuration variables associated with a string.
+	* TODO: remove more entries fixed and add an explanation based on Karl
+	input.
+
+2011-12-03  Patrice Dumas  <pertusus@free.fr>
+
+	* TODO, tp/TODO: remove fixed entries, add some more and put the entry
+	on --output-encoding in the main TODO file.
+
+2011-11-24  Patrice Dumas  <pertusus@free.fr>
+
+	* doc/texinfo.txi (part): Protect @ in Texinfo example.
+	(Other Configuration Variables): Reenable latex2html related variables.
+	(Info Format Whole Manual, Info Format: Preamble): use subheading and
+	not subsection consistently.
+
+2011-11-16  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	Implement info-virtual-index.
+	
+	* info/indices.c (info_virtual_index): New function.
+	* info/info-utils.c (text_buffer_init)
+	(text_buffer_free,text_buffer_vprintf)
+	(text_buffer_add_string,text_buffer_fill)
+	(text_buffer_add_char,text_buffer_printf): New functions.
+	* info/info-utils.h (text_buffer): New struct.
+	(text_buffer_init)
+	(text_buffer_free,text_buffer_vprintf)	
+	(text_buffer_add_string,text_buffer_fill)
+	(text_buffer_add_char,text_buffer_printf): New protos.
+	* info/infomap.c (default_emacs_like_info_keys): 'I'
+	calls info-virtual-index.
+	(default_vi_like_info_keys): ESC-I calls info-virtual-index.
+	* info/window.c (message_buffer_size)
+	(message_buffer_index): Remove.
+	(message_buffer): Change type to struct text_buffer.
+	All uses changed.
+
+	* doc/info-stnd.texi: Document virtual-index.
+	
+2011-11-07  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi: replace @inforef's to the Info manual
+	with regular @xref's, since the Info manual has not been
+	Info-only for many years.
+
+2011-11-06  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\putworderror): new word for translation.
+	(\box0 for \errorbox for @error{}): use it.
+	* doc/texinfo-en.tex (\putworderror): define here too.
+
+	* doc/texinfo.tex (\dopdfimage): try .pdf and .PDF first.
+	* doc/texinfo.txi (Image Syntax): document this.
+	(implied by help-texinfo report from Rick Jones,
+	28 Oct 2011 11:09:33).
+
+	* doc/texinfo.txi (Configuration Variables): rename from
+	`@command{texi2any} Configuration Variables'.
+
+2011-11-04  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Other Configuration Variables): mention
+	CPP_LINE_DIRECTIVES.
+
+2011-10-31  Patrice Dumas  <pertusus@free.fr>
+
+	* doc/texinfo.txi (Other Configuration Variables): TOP_FILE is only
+	for HTML.
+
+2011-10-28  Karl Berry  <karl@gnu.org>
+
+        Flip-flop again: no maintainer mode.
+	* configure.ac (AM_MAINTAINER_MODE): remove again.
+	* tp/Makefile.am (Makefile.tres): only rebuild the fragment
+	in maintainer mode.
+	* util/Makefile.am (texinfo.cat) [MAINTAINER_MODE]: make conditional.
+	* README.dev,
+	* autogen.sh: mention --enable-maintainer-mode.
+
+2011-10-25  Karl Berry  <karl@gnu.org>
+
+	* man/Makefile.am (EXTRA_DIST): add ginfo.h2m.
+	* configure.ac (AM_MAINTAINER_MODE): reenable.
+	* tp/Makefile.am (Makefile.tres): only rebuild the fragment
+	in maintainer mode.
+	* util/Makefile.am (texinfo.cat) [MAINTAINER_MODE]: make conditional.
+	(dist_pkgdata_DATA): add texinfo.cat to here, and remove
+	now-empty pkgdata_DATA.
+	* README.dev,
+	* autogen.sh: mention --enable-maintainer-mode.
+
+2011-10-22  Karl Berry  <karl@gnu.org>
+
+	* man/Makefile.am (man_rule_0): only ginfo, not ginfokey.
+
+2011-10-22  Patrice Dumas  <pertusus@free.fr>
+
+	* doc/texinfo.txi: add some required punctuation commands.
+
+2011-10-21  Karl Berry  <karl@gnu.org>
+
+	* doc/texi2dvi,
+	* tp/texi2any.pl: help message changes to help help2man.
+	* man: new subdirectory.
+	* doc/Makefile.am, doc/*.5, info/ginfo.h2m: move man files.
+
+2011-10-19  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\var, \doabbr, \doacronym): reset \spacefactor=1000
+	so capital letters in arg don't change spacing.
+	* doc/texinfo.txi (Not Ending a Sentence): briefly mention
+	commands which change the normal sentence-spacing rules.
+
+2011-10-18  Karl Berry  <karl@gnu.org>
+
+	* util/texindex.c, util/texi2pdf,
+	info/info.c, info/infokey.c,
+	install-info/install-info.c: update copyright year.
+
+2011-10-17  Karl Berry  <karl@gnu.org>
+
+	* tp/Makefile.am: rename include to Makefile.tres.
+	(Makefile.tres): regenerate.
+	* tp/maintain/regenerate_file_lists.pl: add copyright,
+	chdir to working directory.
+	* autogen.sh: invoke it.
+
+2011-10-16  Karl Berry  <karl@gnu.org>
+
+	* Makefile.am (po-check): update to find tp/ Perl files,
+	not makeinfo/ C files.
+
+	* AUTHORS, INSTALL, INTRODUCTION, NEWS, README, README-alpha,
+	README.dev, TODO, */README: small text updates.
+
+	* doc/texinfo.txi (Not Ending a Sentence): also mention right quote
+	and brackets.
+
+2011-10-15  Karl Berry  <karl@gnu.org>
+
+	* system.h: rm decls for xmalloc, xrealloc, xstrdup.
+	rm old DMALLOC debugging stuff.
+
+	* gnulib: switch from now-deprecated getopt to getopt-gnu,
+	likewise strdup to strdup-posix.
+	rm gnulib module xsetenv, was only used in C makeinfo.
+
+2011-10-15  Patrice Dumas  <pertusus@free.fr>
+
+	* doc/texinfo.txi (Other Configuration Variables): USE_SECTIONS is
+	not used anymore, the same effect is obtained by setting USE_NODES
+	to false.
+
+2011-10-14  Karl Berry  <karl@gnu.org>
+
+	* lib/substring.c: remove, only used in C makeinfo, no longer built.
+	Leaving us with just xexit in lib, but that still seems useful.
+
+2011-10-13  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Three Arguments): same requirements as node names.
+
+2011-10-13  Patrice Dumas  <pertusus@free.fr>
+
+	* info-stnd.texi: change @itemx to a missing @item.
+	* po/POTFILES.in, configure.ac, po_document/POTFILES.in: remove references
+	to makeinfo/ and texi2html/.
+	* doc/Makefile.am (MAKEINFO, man_rule_0): use tp/texi2any.pl or 
+	tp/makeinfo to regenerate info and man pages.
+
+2011-10-11  Karl Berry  <karl@gnu.org>
+
+	* configure.ac (AC_INIT): version 4.13.90.
+	(AM_INIT_AUTOMAKE): dist-xz rather than lzma.
+
+	* configure.ac (AC_CONFIG_SRCDIR): look for info.c, not makeinfo.c.
+	(AC_CONFIG_FILES),
+	* Makefile.am (SUBDIRS): remove makeinfo.
+	(DIST_SUBDIRS): no need.
+
+2011-10-01  Patrice Dumas  <pertusus@free.fr>
+
+	* doc/texinfo.txi (Generic Translator texi2any/makeinfo): adapt to
+	the new implementation in tp/.
+	* configure.ac, tp/Makefile.am: add an automake conditional to avoid 
+	doing tp tests if dependencies are missing.
+
+2011-09-30  Patrice Dumas  <pertusus@free.fr>
+
+	* doc/texinfo.txi (texi2any Output Customization), 
+	doc/texi2oldapi.texi: archive the texi2any Output Customization
+	chapter in texi2oldapi.texi.  Reduce the text in texinfo.txi
+	to what should be stable.
+
+2011-09-26  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (GNU Sample Texts): change example to be
+	without cover texts, since that is by far the most common case.
+	Update years.
+
+2011-09-26  Patrice Dumas  <pertusus@free.fr>
+
+	* Makefile.am (SUBDIRS, DIST_SUBDIRS), configure.ac, po*/POTFILES.in: 
+	build and distribute the Parser in tp.  Don't build texi2html, but
+	still distribute it.
+
+2011-09-25  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Other Configuration Variables): comment out or
+	remove variables the Parser doesn't have, per Patrice.
+
+2011-09-23  Vincent Bela\"iche  <vincent.belaiche@gmail.com>
+
+	* doc/texinfo.tex (\macroxxx): complain if more than 256 args
+	and non-etex.
+	(\parsemargdef, \defmacro): handle >= 10 args.
+	Processing if <10 args is unchanged.
+	(\parsemmanyargdef, \endargs@, \nil@, \nilm@, \nillm@,
+	 \getargvals@, \getargvals@@, \push@, \macvalstoargs@,
+	 \macargexpandinbody@, \putargsintokens@,
+	 \texisavetoksstackpoint, \texirestoretoksstackpoint,
+	 \texinonouternewtoks, \setemptyargvalues@,
+	 \setemptyargvaluesparser@, \pop@, \longpop@): new macros.
+	(\texiatcatcode): used to save and restore.
+
+2011-09-21  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex: consistently use % rather than %% for comments.
+
+2011-09-18  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Node Line Requirements): parens are 
+	disallowed specifically when confused with external manuals,
+	not always.  Discussion in thread of 18 Sep 2011 09:16:27,
+	and bug http://savannah.gnu.org/bugs/?33373.
+
+	* doc/texinfo.txi (HTML Xref Command Expansion): be more
+	specific about quotation cmds being replaced, not quote chars.
+
+2011-08-27  Karl Berry  <karl@gnu.org>
+
+	* util/texi2dvi (run_tex4ht): respect TEX4HT and T4HT envvars.
+	(usage): more help msg tweaks.
+
+2011-08-26  Karl Berry  <karl@gnu.org>
+
+	* util/texi2dvi (usage): we currently generate .ps with --ps,
+	not .pdf.  Other wording tweaks.
+	(run_tex_suite): missed $ in setting DVIPS by default.
+
+2011-08-14  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\cartouche): restore \parskip glue if following
+	a sectioning command.  Bug report from Werner Lemberg,
+	12 Aug 2011 08:04:46.
+
+2011-08-02  Sergey Poznyakoff  <gray@gnu.org>
+
+	* info/session.c (min_search_length): Set to 1.
+	* NEWS: Update.
+	* doc/info-stnd.texi: Update.
+
+2011-07-28  Sergey Poznyakoff  <gray@gnu.org>
+
+	* info/variables.c (info_variables): New variable:
+	min-search-length.
+	* info/variables.h (min_search_length): New extern.
+	* info/session.c (min_search_length): New variable.
+	(info_search_1): Do not search for patterns shorter
+	than min_search_length.
+	* info/indices.c (do_info_index_search): Do not search
+	for patterns shorter than min_search_length.
+	* doc/info-stnd.texi: Document min-search-length.
+	* NEWS: Document min-search-length.
+
+2011-07-28  Sergey Poznyakoff  <gray@gnu.org>
+
+	* info/info-utils.c (printed_representation): Change first
+	argument to const char *, all callers updated.
+	* info/info-utils.h (printed_representation): Change signature.
+
+	* info/doc.h (key_documentation): Remove prototype.
+	* info/filesys.c, info/footnotes.c,
+	info/info-utils.c, info/info.c, 
+	info/infomap.c, info/m-x.c, info/nodemenu.c,
+	info/search.c, info/variables.c,
+	info/window.c: Remove extra arguments from calls to variadic functions.
+	* info/infodoc.c (key_documentation): Remove unused function.
+	Remove extra arguments from calls to variadic functions.
+	* info/indices.c (info_next_index_match): Fix error message.
+	Remove extra arguments from calls to variadic functions.
+	* info/session.c (info_menu_digit): Use ngettext.
+	Remove extra arguments from calls to variadic functions.
+	* info/echo-area.c (ea_possible_completions): Use ngettext.
+        Remove extra arguments from calls to variadic functions.
+
+2011-05-29  Karl Berry  <karl@gnu.org>
+
+	* util/texi2dvi: version, copyright year.
+
+2011-05-28  Bruno Haible  <bruno@clisp.org>
+
+	* util/texi2dvi: Set LC_ALL to C for egrep of range expression.
+	bug-texinfo mail, 28 May 2011 16:29:20.
+
+2011-05-23  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\deftypefnnewline): rename layout option.
+	* NEWS,
+	* doc/refcard/txirefcard.tex,
+	* doc/texinfo.txi (Typed Functions),
+	(Object-Oriented Methods): document @deftypefnnewline.	
+
+2011-05-23  Jonathan Nieder  <jrnieder@gmail.com>  (tiny change)
+
+	* util/texi2dvi (local): wrap the fallback definition using eval, to
+	hide it from shells, like dash after "[VAR] Do not poplocalvars
+	prematurely on regular utilities", 2010-05-27, that implement "local"
+	and treat redefinition of the "local" builtin as a syntax error.
+	Report in http://savannah.gnu.org/bugs/?33374,
+	bug-texinfo 23 May 2011 02:58:35.
+
+2011-05-21  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex: use single % consistently for comments.
+	(\need): remove old definition unused for many years.
+	
+	* doc/texinfo.tex (\deftypefnnl): new layout command.
+        (\ifdoingtypefn, \ifrettypeownline): new conditionals.
+        (\deftypefngeneral): set \doingtypefntrue.
+        (\defname): force vmode; implement layout option (requires
+ 	 third \parshape line).
+        Suggestion from Thien-Thi Nguyen, help-texinfo 03 Mar 2011 12:16:28.
+
+2011-05-11  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (^^a0): use \tie instead of ~ for the no-break space,
+	since we redefine the ~ character.
+	(^^L): \def without the \outer, so it can be used in comments.
+	Report from Vincent Bela\"iche.
+
+2011-05-01  Patrice Dumas  <pertusus@free.fr>
+
+	* texi2html/texi2html.pl (rearrange_elements): fix NextFile.
+	* texi2html/formats/html.pm (@LINKS_BUTTONS,HEADER_IN_TABLE),
+	texi2html/maintained_extra/book.pm (@LINKS_BUTTONS):
+	use NodeUp or Up in @LINKS_BUTTONS to be consistent with the other
+	directions.
+
+2011-04-30  Patrice Dumas  <pertusus@free.fr>
+
+	* texi2html/texi2html.pm, texi2html/texi2html.pl, 
+	texi2html/formats/html.pm (HTML_DEFAULT_about_body): new 
+	configuration variable, DO_ABOUT to disconnect the choice
+	to do the About element from HEADER_IN_TABLE.
+
+2011-04-25  Sergey Poznyakoff  <gray@gnu.org>
+
+	* info/man.c (manpage_node_of_file_buffer): Initialize body_start.
+
+2011-04-09  Patrice Dumas  <pertusus@free.fr>
+
+	* */*: rename major .init files as .pm files, especially 
+	those that are processed by xgettext.  Report from Sergey 
+	Poznyakoff.
+
+2011-04-07  Patrice Dumas  <pertusus@free.fr>
+
+	* po/POTFILES.in: re-add perl files that have error messages.
+	* po_document/POTFILES.in: add tp/Convert/HTML.pm.
+
+2011-04-08  Karl Berry  <karl@gnu.org>
+
+	* util/gendocs.sh: split_html_db_dir used before definition.
+	Report from Bruce Korb, bug-gnulib 08 Apr 2011 14:15:08.
+
+2011-04-08  Sergey Poznyakoff  <gray@gnu.org>
+
+	Fix make distcheck
+	
+	* Makefile.am (dist-hook): New rule to distribute tp.
+	* texi2html/Makefile.am (DISTCLEANFILES): Add translations.pl and
+	translations.pl.old
+	
+2011-04-06  Sergey Poznyakoff  <gray@gnu.org>
+
+	Use C99 stdarg.
+	
+	* system.h [HAVE_VPRINTF]: Remove obsolete stuff.  Include
+	stdarg.h unconditionally.
+	(TEXINFO_PRINTFLIKE): New macro.
+	* info/info.c (main): Update invocations of info_follow_menus.
+	(vinfo_error): New function.
+	(info_error): Change signature to that of a variadic function.
+	(show_error_node): New function.
+	* info/info.h (info_error): Change signature.
+	(vinfo_error,show_error_node): New function.
+	* info/infodoc.c (create_internal_info_help_node): Use
+	string_to_node.
+	* info/infokey.c (syntax_error, error_message): Change to
+	variadic functions.  All uses updated.
+	* info/session.c (begin_info_session_with_error): Remove.
+	(info_follow_menus): On errors fill in a formatted error node.
+	* info/session.h (begin_info_session_with_error): Remove proto.
+	(info_follow_menus): Change prototype.
+	* info/window.c (free_echo_area): Remove static qualifier.
+	(vwindow_message_in_echo_area): New function.
+	(window_message_in_echo_area): Rewrite as a variadic function.
+	(message_in_echo_area): Likewise.
+	(message_buffer_size, message_buffer_index): Change type to size_t.
+	(message_buffer_resize): Remove.
+	(build_message_buffer): Rewrite from scratch, using vsnprintf.
+	(printf_to_message_buffer): Rewrite as a variadic function.
+	(message_buffer_length_this_line): Rewrite via strrchr.
+	* info/window.h (build_message_node): Change prototype.
+	(format_message_node,): New prototypes.
+	(printf_to_message_buffer): Now a variadic function.
+	(window_message_in_echo_area): Likewise.
+	(message_in_echo_area): Likewise.
+	(vwindow_message_in_echo_area): New prototype.
+	(free_echo_area): New prototype.
+	* install-info/install-info.c (vdiag): New functions.
+	(error,warning,fatal): Rewrite as variadic functions.
+	All uses updated.
+	(insert_html_tag_with_attribute): Likewise.
+	* makeinfo/html.h (insert_html_tag_with_attribute): New prototype.
+	* makeinfo/makeinfo.c (error,file_line_error)
+	(line_error,warning,add_word_args)
+	(add_html_block_elt_args,execute_string): Rewrite as variadic functions.
+	All uses updated.
+	* makeinfo/makeinfo.h (add_word_args,add_html_block_elt_args)
+	(execute_string,warning,error)
+	(line_error,file_line_error): Change signatures.
+	* makeinfo/xml.c (xml_insert_element_with_attribute): Use C99
+	stdarg.
+	(xml_insert_element_with_attribute): Likewise.
+	* po/Makevars (XGETTEXT_OPTIONS): Add new flags.
+	* po/POTFILES.in: Remove perl sources, taken care of in
+	po_document.
+	* util/texindex.c (fatal,error): Rewrite as variadic functions.
+
+2011-03-28  Karl Berry  <karl@gnu.org>
+
+	* doc/gendocs_template: rm comments about xml.
+
+2011-03-25  Karl Berry  <karl@gnu.org>
+
+	* doc/htmlxref.cnf (ed, smtp, libmatheval, sos, mpc): correct links.
+
+2011-03-22  Karl Berry  <karl@gnu.org>
+
+	* util/gendocs_template,
+	* util/gendocs_template_min: 2011, boilerplate updates.
+
+2011-03-22  Patrice Dumas  <pertusus@free.fr>
+
+	* configure.ac, lib/: ship Text::Unidecode to have more
+	reproduceable results and fewer conditionals.
+
+2011-03-20  Patrice Dumas  <pertusus@free.fr>
+
+	* po/POTFILES.in,
+	* po_document/POTFILES.in: add files in tp/.
+
+2011-03-18  Karl Berry  <karl@gnu.org>
+
+	* doc/info-stnd.texi (Stand-alone Info): bug reporting address.
+	
+	* doc/texinfo.txi: standalone not stand-alone in this manual.
+
+2011-03-06  Karl Berry  <karl@gnu.org>
+
+	* util/htmlxref.cnf (mpc): new GNU package.
+
+2011-03-04  Karl Berry  <karl@gnu.org>
+
+	* util/htmlxref.cnf (ed, GUILE_GNOME, libmatheval): typos,
+	report from webmaster Shailesh Gadge.
+
+2011-02-28  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Raw Formatter Commands),
+	(Conditionals Commands): be clearer that @if... delimits standard
+	Texinfo source, and the commands allowed in @iftex are exceptions.
+	Mention newlines.
+
+2011-02-27  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Four and Five Arguments): explicitly describe
+	what happens when the third argument is omitted.
+
+2011-02-23  Karl Berry  <karl@gnu.org>
+
+	* texinfo.tex (\codequotebacktick, \codequoteundirected): new commands.
+	* NEWS,
+	* doc/refcard/txirefcard.tex,
+	* doc/texinfo.txi (Inserting Quote Characters): document them.
+
+2011-02-23  Karl Berry  <karl@gnu.org>
+
+	* texinfo.tex (\xrefautomaticsectiontitle): new command.
+	* NEWS,
+	* doc/refcard/txirefcard.tex,
+	* doc/texinfo.txi (Three Arguments): document it.
+
+2011-02-22  Karl Berry  <karl@gnu.org>
+
+	* info/ginfo.h2m: new file.
+	* doc/Makefile.am (info.1): also depend on info/ginfo.h2m.
+	(man_rule_info): use -I to have help2man optionally include
+	$$program.h2m.
+	https://savannah.gnu.org/bugs/?24052
+
+2011-02-20  Karl Berry  <karl@gnu.org>
+
+	* doc/refcard/txirefcard.tex,
+	* doc/texinfo.txi (Command Summary): add @copying, @insertcopying,
+	@indent, @headitemfont, @dotless, @unmacro.
+	* doc/refcard/txicmdcheck: also check against implementation.
+	* util/txicmdlist: script to output all implemented commands.
+
+2011-02-18  Karl Berry  <karl@gnu.org>
+
+	* doc/refcard/txirefcard.tex,
+	* doc/texinfo.txi (Command Summary): add @allowcodebreaks,
+        @fonttextsize.
+
+2011-02-17  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Command Summary): add @frenchspacing.
+	* doc/refcard/txirefcard.tex (@frenchspacing): add.
+
+2011-02-16  Sergey Poznyakoff  <gray@gnu.org>
+
+	* info/echo-area.c (ea_possible_completions): If the
+	key which invokes the function was pressed twice, and
+	it represents a printable character, insert that character in the
+	echo area.  E.g., pressing ?? inserts a single question mark into
+	the EA.
+
+2011-02-16  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (anchor, HTML Xref Link Preservation): two
+	approaches to preserving links to deleted/renamed nodes.
+
+2011-02-14  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\sectionheading): check that we are not in an
+	environment such as @table.  Report from Akim,
+	https://savannah.gnu.org/bugs/?15514.
+
+	* NEWS,
+	* doc/texinfo.txi (Command Summary): missed @urefbreakstyle.
+	
+	* util/texinfo.dtd (sp, printindex): categorize.
+
+2011-02-10  Sergey Poznyakoff  <gray@gnu.org>
+
+	Exclude node headers from searches.
+	
+	* info/nodes.h (NODE): New member body_start.
+
+	* info/search.c (regexp_search): Remove length argument.
+	Search bounds are given by binding.  Change the code accordingly.
+	* info/search.h (regexp_search): Change signature.
+	* info/session.c (info_search_in_node_internal): New argument
+	match_nodename.  If it is set, try to match nodename first.
+	Otherwise, match the node contents, excluding the node line.
+	(info_search_in_node): Pass 0 as match_nodename to
+	info_search_in_node_internal.
+	(info_search_internal): Pass 1 as match_nodename after switching
+	to the new node.
+	
+	* info/nodes.c (node_set_body_start): New function.
+	(info_get_node_of_file_buffer): Set body_start on the new node.
+	(info_node_of_file_buffer_tags): Likewise.
+	
+2011-02-09  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\urefbreak): revised attempt to allow breaking
+	in urls, using only active characters, no \scantokens.
+	(\uref): use it.  (leave old definition as \urefnobreak)
+	(\urefcatcodes, \urefcode, \urefprestretch, \urefpoststretch,
+	 \urefcode{amp,dot,hash,quest,slash}, \urefcodeslashfinish,
+	 \normal{amp,dot,hash,percent,question,slash}): helpers.
+	(\urefbreakstyle): new command.
+	(\wordafter,\wordbefore,\wordnone): helpers.
+	* doc/refcard/txirefcard.tex,
+	* doc/texinfo.txi (uref): document @urefbreakstyle, more on @uref.
+
+2011-02-07  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\latonechardefs): typo in ^^b definition,
+	\guilletright -> \guillemetright.  Reported by Peter Muenster,
+	http://bugzilla.novell.com/show_bug.cgi?id=669714.
+
+2011-02-06  Patrice Dumas  <pertusus@free.fr>
+
+	* texi2html/Makefile.am: Add a missing $(srcdir).  Report 
+	from Jerker B\"ack, fix by Karl.
+	http://savannah.gnu.org/bugs/?32328
+
+2011-02-02  Ben Wong  <bugs.debian.org@wongs.net>  (tiny change)
+
+	* info/window.c (window_line_of_point): do not ever return
+	a negative number, to avoid crash on very small windows.
+	http://savannah.gnu.org/bugs/?32255, http://bugs.debian.org/611151
+
+2011-02-01  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\douref): reinstate old definition.
+
+2011-01-23  Karl Berry  <karl@gnu.org>
+
+	* util/htmlxref.cnf: add recutils
+
+2011-01-20  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\douref): ensure that we are not in vertical
+	mode when executing \endlink.
+
+2011-01-19  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\urefcode): also allow breaks at ?.
+	(\urefcodequestion): new macro.
+	* doc/texinfo.txi (uref): document new line breaking.
+
+	* doc/texinfo.tex: reduce line lengths to <= 79 chars.
+
+2011-01-17  Oleg Katsitadze <olegkat@gmail.com>
+
+	* doc/texinfo.tex (@uref):  Allow line breaks after and
+	stretchable glue around ., # and / characters in URLs.
+
+2011-01-15  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (\includezzz, \doverbatiminclude): report what's
+	being included to the log.
+	(\fontttextsize, \DeclareUnicodeCharacter): comment out \wlog calls.
+
+2011-01-14  Karl Berry  <karl@gnu.org>
+
+	* makeinfo/sectioning.c (current_chapter_number): increase possible
+	integer string to 100, following get_sectioning_number.
+	Report from Kees Cook, 13 Jan 2011 22:24:25, sv#32122.
+
+2011-01-10  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (texi2html History): move to texi2oldapi.texi
+	archive file.
+
+2011-01-09  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Other Configuration Variables): finish edit.
+
+2011-01-03  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Other Configuration Variables): continue edit.
+
+2011-01-01  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Other Configuration Variables): continue edit.
+
+2010-12-31  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Tips and Hints): @insertcopying no longer
+	recommended in Top node.  Discrepancy noted by Adrienne Thompson.
+
+2010-12-23  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\scanmacro): use \empty instead of \endinput,
+	since the actual meaning of \endinput turns out to have nothing to
+	do with it.  Doc fixes.
+
+2010-12-18  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Other Configuration Variables): continue.
+
+2010-12-14  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Other Configuration Variables): continue.
+
+2010-12-09  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Other Configuration Variables): begin reading.
+
+2010-12-03  Karl Berry  <karl@gnu.org>
+
+	* makeinfo/tests/*: uniformly set LC_ALL, unset LANG, LANGUAGE,
+	TEXINFO_OUTPUT.  Report from Ryan Hill, 19 Sep 2010 12:22:20,
+	http://savannah.gnu.org/bugs/?31068.
+
+2010-12-03  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* info/man.c (get_manpage_node): Avoid null pointer dereference
+	of info_windows.
+
+2010-12-03  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Configuration Variables and Options),
+	(Configuration Variables for @@-Commands): rename+edit.
+
+2010-12-02  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (texi2any Configuration Variables): rather than
+	makeinfo, I guess.
+	(Other Configuration Variables): Split off into new node.
+
+2010-12-01  Patrice Dumas  <pertusus@free.fr>
+
+	* texi2html/texi2html.pl: don't warn when a user-defined macro
+	without argument is called without braces.  Report from Werner 
+ 	Lemberg.
+
+2010-11-28  Karl Berry  <karl@gnu.org>
+
+	* texi2html/texi2html.pl (prepare_htmlxref): ignore whitespace
+	before variable name in variable assignments.
+
+2010-11-26  Karl Berry  <karl@gnu.org>
+
+	* util/gendocs.sh: mention canonical script location.
+
+	* doc/texinfo.txi (node-related nodes): remove @refill, refill
+	source lines, small text changes.
+	(throughout): use "an <@@-command>" consistently, instead of "a".
+
+2010-11-26  Patrice Dumas  <pertusus@free.fr>
+
+	* texi2html/texi2html.pl: don't warn whan a macro defined with
+	zero arguments is called without braces.  Report from Werner LEMBERG.
+
+2010-11-18  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (GNU Sample Texts): update and make self-consistent.
+
+2010-11-17  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi: uniqify more index entries.
+
+2010-11-16  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi: uniqify some index entries.
+
+2010-11-15  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Indexing Commands): recommend unique index
+	entries.  (bug-texinfo thread starting 29 Jul 2010 23:23:02)
+	(throughout): consistently @code for <tags> in index entries.
+
+2010-11-14  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Invoking Macros): attempt to clarify
+	calling without braces (only allowed if the macro takes exactly
+	one arg), and leaving arguments out (ok).
+
+2010-11-11  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Macro Details): mention non-expansion contexts
+	for makeinfo.  More caveats about @macro in TeX.
+	(set value): mention the @value{something} can't be the argument
+	to accent commands.  (makeinfo supports it in braced arguments,
+	but texinfo.tex can't handle it.)
+
+2010-11-09  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Macro Details): more caveats about newlines.
+
+2010-11-08  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (History): rationale for Perl texi2html -> texi2any.
+
+2010-11-07  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Customizing CSS): edit.
+
+2010-11-06  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Customizing Indices): rename+edit.
+
+2010-11-05  Karl Berry  <karl@gnu.org>
+
+	* doc/texi2oldapi.texi: new file archiving several API sections
+	which will likely become obsolete with the new tree-based translator.
+	* doc/texinfo.txi (Customizing HTML Basic Commands,
+        Customizing HTML References,
+	Customizing HTML Footnotes
+	Customizing HTML Block Commands,
+	Paragraph and preformatted region,
+	Lists tables and definitions formatting,
+	Menus indices and floats formatting,
+	Handling special regions,
+        Other and unknown commands): these sections removed.
+
+2010-11-03  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (HTML Customization of Alignment Commands):
+	rename+edit.
+
+2010-11-01  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Customizing HTML Footnotes): rename+edit.
+
+2010-10-31  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (HTML Customization for Internal References):
+	rename+edit.
+
+2010-10-30  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (HTML Customization for External References):
+	rename+edit.
+	Change "cross-reference" to "cross reference" throughout,
+	for consistency.
+
+2010-10-29  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (HTML Customization for Title Commands): rename+edit.
+
+2010-10-28  Patrice Dumas  <pertusus@free.fr>
+
+	* texi2html/texi2html.pl: declare %texi2dvi_formats.  Report from
+	Per Bothner and Werner LEMBERG.
+
+2010-10-28  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (HTML Customization for Text Sequences): rename+edit.
+
+2010-10-27  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (HTML Customization for @code{sp},
+	HTML Customization for Abbreviations): rename+edit.
+
+2010-10-24  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Command List): alphabetization fixes.
+	Report from Christophe Jarry, 23 Oct 2010 17:45:54.
+	
+	(HTML Customization for Anchors, HTML Customization for Images):
+	rename+edit.
+
+2010-10-24  Patrice Dumas  <pertusus@free.fr>
+
+	* texi2html/texi2html.pl (%index_names): remove the 'prefixes' key, 
+	it isn't useful.
+	* texi2html/formats/info.init (info_default_normal_text): 
+	upper case @var even when producing utf8.  Report from Karl.
+
+2010-10-15  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Custom Interface for Simple HTML Customization):
+	rename+edit.
+
+2010-10-14  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Hash Interface for HTML Customization): rename+edit.
+
+2010-10-13  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Customizing HTML for Simple Commands): rename+edit.
+	(Customizing HTML After @@-Colon): Try using @-command in node name.
+
+2010-10-12  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* util/texi2dvi (run_index): Separate `local' statement from
+	variable initialization, so dash v0.5.5.1 won't word-split the
+	right hand side.
+
+2010-10-12  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Customizing HTML After At-Colon): rename+edit.
+
+2010-10-11  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Customizing HTML Basic Commands),
+	(Customizing HTML Commands Without Arguments): rename+edit.
+
+2010-10-10  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Customizing Output File Names): further
+	attempts at clarifying the config vars for output file names.
+	(Customizing HTML Headings): rename+edit.
+
+2010-10-08  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Defining Macros),
+	(alias),
+	(set value): more precisely document naming recommendations
+	and requirements.
+
+2010-10-07  Sergey Poznyakoff  <gray@mirddin.farlep.net>
+
+	* info/nodes.c (info_node_of_file_buffer_tags): Check if
+	tag->nodestart is valid.  Suggested by Hilmar Preusse
+	<hille42@web.de>.
+
+2010-10-01  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Customizing Output Target Names): rename+edit.
+
+2010-09-26  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi: Avoid more duplicated index entries.
+	(PDF Output): correct link for GNU GV.
+
+2010-09-25  Patrice Dumas  <pertusus@free.fr>
+
+	* texi2html/texi2html.pl (enter_index_entry),
+	texi2html/texinfo.init (index_entry), formats/info.init (index_entry):
+	Pass the information whether in code or not for index entries, 
+	and use it.  Report from Karl.
+
+2010-09-24  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (HTML Title Page Customization),
+	(Customizing Output File Names): rename+edit.
+	Avoid some duplicated index entries.
+
+2010-09-21  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Footnotes text): merge into upper section.
+	(About text): rename+edit.
+
+2010-09-20  Eric Blake  <address@hidden>
+
+        * util/gendocs.sh: Allow spaces in outdir, do not include
+	full pathname in archive.
+
+2010-09-20  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Top Element Customization, Contents and
+	Overview Elements Customization): rename+edit.
+
+2010-09-19  Karl Berry  <karl@gnu.org>
+
+	* texi2html/texi2html.pl (makeinfo_help): tweak formatting/wording.
+
+2010-09-18  Jaakko Hollm\'en  <Jaakko.Hollmen@tkk.fi>
+
+	* texi2html/examples/texinfo-bright-colors.css, texi2html/Makefile.am:
+	New css file with bright and contrasting colors.
+
+2010-09-16  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Customizing {Layout,Content} of Special Elements):
+	rename+edit.
+
+2010-09-16  Patrice Dumas  <pertusus@free.fr>
+
+	* texi2html/texi2html.pl (line_warn, line_error, format_line_number):
+	Use 'possibly involving' instead of 'via' since it is not certain
+	that the macro was the one in the error message as line information
+	is for whole lines, even when more than one macro may be expanded 
+	within the line.
+
+2010-09-14  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (verb): make i/o match.
+	Report from Benno Schulenberg, 14 Sep 2010 16:03:35.
+
+2010-09-13  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Customizing HTML Special Elements): rename+intro.
+	Remove @comments with node pointers, since we don't need or want to
+	specify pointers at all these days and years.
+
+2010-09-11  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Customizing HTML Page Footers): rename + edit.
+
+2010-09-12  Patrice Dumas  <pertusus@free.fr>
+
+	* texi2html/texi2html.pl (rearrange_elements), 
+	texi2html/texi2html.init, texi2html/examples/makeinfo.init,
+	texi2html/formats/html.init: rename the 'Following' direction
+	as 'NodeForward' and add the 'NodeBack' direction.
+	Fix and simplify infinite loop detection when finding NodeForward.
+
+2010-09-11  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Customizing HTML Section Layout): rename + edit.
+
+2010-09-11  Patrice Dumas  <pertusus@free.fr>
+
+	* texi2html/texi2html.init (%misc_command, t2h_default_preserve_misc_command):
+	set args instead of skip when a line is in fact the misc
+	@-command argument.
+	* texi2html/texi2html.pl (add_to_texi2dvi_args), 
+	texi2html/texi2html.init: call texi2dvi for pdf, dvi and ps output, 
+	add command line options for texi2dvi and pass some existing options.
+
+2010-09-10  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Output Element Labels): add Section*,
+	rm File*, etc., per Patrice.
+	(Customizing Page Headers): rename + edit.
+
+2010-09-09  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Navigation Panel Formatting Functions): rename+edit.
+
+2010-09-08  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Output Element Lines),
+	(Navigation Button Specification): rename + edit.
+	(verb): mention that the delimiter character can appear inside the
+	argument.
+
+2010-09-07  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Output Element Labels): rename + edit.
+
+2010-09-06  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\dosmartslant): localize font switch to \ttsl.
+	Report from Bruno Haible, 29 Aug 2010 15:46:01.
+
+	* doc/texinfo.tex (\lattwochardefs): define \ed and \ee using
+	\dotless{i} rather than \i.  Report from Andrei Kholodnyi,
+	3 Sep 2010 20:14:42.	
+
+	* doc/texinfo.txi (Internationalization of Strings): edit.
+
+2010-09-06  Roland Kaufmann  <roland.kaufmann@gmail.com>  (tiny change)
+
+	* util/texi2dvi: new option --shell-escape.
+
+2010-09-01  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Init File Expansion Contexts): edit.
+
+2010-08-30  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	* info/indices.c (do_info_index_search, index_entry_exists): Check
+	for NULL return from file_buffer_of_window.  Patch proposed by
+	Vitezslav Crhonek <vcrhonek@redhat.com>.
+
+2010-08-28  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* doc/texinfo.txi (Indexing Commands): Fix typo.
+
+2010-08-28  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi: consistently capitalize after colons in
+	@section, etc.
+
+2010-08-26  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi: Systematize use of @@ vs. @code{@@}.
+
+2010-08-25  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Init File General Block Commands): edit.
+
+	* doc/texinfo.txi (Init File Global Information): split into subnodes,
+	and merge in `Program String Customization'.
+
+2010-08-21  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Init File Formatting of Commands): edit.
+
+2010-08-17  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\commondummies),
+	(\indexnofonts): handle @- @{ @} @arrow @geq @leq.
+
+	* doc/texinfo.txi (Init File Calling at Different Stages): edit.
+
+2010-08-16  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (texi2any's Three Passes): edit, merge
+	with output initialization/finalization.
+
+	* doc/texinfo.tex (\commondummiesnofonts): handle \sansserif,
+	\slanted, \dmn, \indicateurl (so they work in node/chapter names now).
+
+	* doc/texinfo.txi (Other Info Directories): update Emacs example
+	and text in general.  Avoid footnotes.
+	Report from Rob Dickens, 13 Aug 2010 14:30:54.
+
+2010-08-15  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\refX): use \the\toks to avoid full expansion
+	of possibly-complex cross-reference name, a la @chapter, etc.
+
+	* doc/texinfo.txi (Init File Encodings),
+	 (Init File Functions): rename+edit.
+
+2010-08-14  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Init File Global Information): merge text
+	from Flag values node.
+
+2010-08-13  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Init File Global Information): edit.
+
+2010-08-12  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Loading Init Files),
+	(HTML Xref Configuration): change doc of loading order.
+
+2010-08-13  Patrice Dumas  <pertusus@free.fr>
+
+	* texi2html/texi2html.pl (close_stack): more precise error
+	message when closing @verb.  Karl report.
+	* texi2html/texi2html.pl (do_text): disable the warning about
+	unlikely character in @var. It is too expensive (because do_text 
+	is called often) for a warning which rather questionable anyway.
+	* texi2html/texi2html.init (t2h_default_external_href): an
+	empty entry in htmlxref causes the corresponding possibility
+	being ignored.
+	* texi2html/texi2html.pl: reverse the order of directories where
+	Config files are looked for, such that the last called are the
+	preferred ones, allowing to override what was set before.
+
+2010-08-12  Patrice Dumas  <pertusus@free.fr>
+
+	* texi2html/texi2html.pl (prepare_htmlxref): also use the
+	manual input directory to search for htmlxref.cnf files.
+	Karl idea.
+	* texi2html/tests/Makefile.am: copy htmlxref files from references.
+	* texi2html/Makefile.am: ship translations.pl to always have it
+	in the srcdir for out of source build.
+
+2010-08-11  Patrice Dumas  <pertusus@free.fr>
+
+	* texi2html/texi2html.pl (enter_author_command): format the 
+	@author text if not already done.  Check if command is @author
+	is now done outside of the function.
+	* texi2html/texi2html.pl (scan_line): prepare for detection of 
+	commands that are not at the begining of the line though they 
+	should be.  Mostly not activated, since modifications to the 
+	processed line leads to spurious error messages.
+	%begin_line_command hash holds all the commands that should
+	be at the begining of the line.
+	Don't treat sectioning commands like any heading command if they
+	are not at the begining of the line.
+
+2010-08-09  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Output Elements Defined): rename/edit from
+	`The different elements'.
+
+2010-08-09  Patrice Dumas  <pertusus@free.fr>
+
+	* texi2html/texi2html.pl (pass_texi): add line numbers when adding
+	text to close @-commands at the end of the first pass.
+
+2010-08-08  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	* info/indices.c (index_partial): New static variable.
+	(index_entry_matches): New static function.
+	(info_next_index_match): Use index_entry_matches to find
+	exact matches. When exact matches are exhausted, look for
+	partial matches, starting from the beginning of the index.
+	When looking for partial matches, take care not to return
+	previous exact matches. 
+
+2010-08-08  Patrice Dumas  <pertusus@free.fr>
+
+	* texi2html/texi2html.init, texi2html/texi2html.pl (do_text):
+	warn if [](), appears inside @var. Report from Karl.
+	* texi2html/texi2html.pl: accept a --reference-limit=N option
+	for backward reference with makeinfo.
+
+2010-08-06  Patrice Dumas  <pertusus@free.fr>
+
+	* texi2html/Makefile.am: generate AUTHORS based on texinfo AUTHORS
+	and copy config.rpath.
+	* texi2html/texi2html.pl (locate_init_file): explicitly give the
+	directories in argument.
+	* texi2html/texi2html.init, texi2html/T2h_l2h.pm: no default 
+	initialization file for latex2html.  Don't use locate_init_file to 
+	find the initialization file.
+	* texi2html/texi2html.pl: search in ./ and ./.program_name for init
+	files and htmlxref.cnf files.  Report from Karl.
+
+2010-08-05  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Loading Init Files),
+	(Init File Basics): shorten names.
+	(Init File Variables, Init File Variables): split off from Basics.
+
+2010-08-04  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Setting and Getting Configuration Variables):
+	capitalize+edit.
+
+2010-08-02  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Initialization File Basics): capitalize+edit.
+
+2010-08-01  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Loading Initialization Files): capitalize+edit.
+
+2010-08-01  Patrice Dumas  <pertusus@free.fr>
+
+	* texi2html/texi2html.pl (set_variable),
+	(get_conf): accept an undef value as a regular value.
+	(unset_variable),
+	(unset_from_document): unset a variable by removing the 
+	corresponding key from the hash.  Replaces set_variable($var, undef)
+	now that undef is a regular value.  Done for a report from Karl.
+	* texi2html/texi2html.init (t2h_default_select_substitution):
+	Simplify.
+	* texi2html/test/run_test*.sh: set --error-limit=1000 to avoid
+	failing tests because of the default error limit.
+
+2010-07-30  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Internationalization of Strings): edit node,
+	including re-capitalization.
+	(Info Format Regular Nodes): mention that periods, etc., cannot be
+	used in Info identifiers.
+
+2010-07-27  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (texiany Output Customization, makeinfo
+	Configuration Variables): slightly reword incompatibility warnings.
+
+2010-07-27  Patrice Dumas  <pertusus@free.fr>
+
+	* texi2html/texi2html.pl: use the actual values for defaults
+	in texi2html description of command line options.  Report from 
+	Karl.
+
+2010-07-26  Karl Berry  <karl@gnu.org>
+
+	* util/gendocs.sh: pass SETLANG to texi2dvi invocations, too.
+	Report from Ales Cepek, 26 Jul 2010 14:24:24.
+
+2010-07-26  Patrice Dumas  <pertusus@free.fr>
+
+	* doc/texinfo.txi (makeinfo Configuration Variables)
+	(texi2any output customization): warn that the API and 
+	configuration variables may change at any time.
+
+2010-07-25  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Invoking texi2any): general editing.
+
+2010-07-26  Patrice Dumas  <pertusus@free.fr>
+
+	* texi2html/doc/: merge the texi2html manual in the texinfo
+	manual, remove the manual and the directory.
+	* doc/texinfo.txi (Texi2HTML): add information taken from
+	the Texi2HTML manual with a bit more history.
+
+2010-07-25  Patrice Dumas  <pertusus@free.fr>
+
+	* texi2html/texi2html.init (program_string): use @emph instead
+	of @i in the program string.
+
+2010-07-25  Patrice Dumas  <pertusus@free.fr>
+
+	* texi2html/doc/texi2html.texi: reduce the texi2html manual 
+	to the minimum. Keep history, differences with texi2any and
+	the list of incompatibilities with past versions.
+
+2010-07-25  Patrice Dumas  <pertusus@free.fr>
+
+	* doc/texinfo.txi (Internationalization of strings): add this node
+	describing the internationalization of strings output in texi2any.
+
+2010-07-25  Patrice Dumas  <pertusus@free.fr>
+
+	* doc/texinfo.txi: update the documentation of texi2any 
+	customization to match the current state of the code.
+
+2010-07-25  Karl Berry  <karl@gnu.org>
+
+	* util/htmlxref.cnf: new file.
+	* util/Makefile.am (dist_pkgdata_DATA): add it.
+
+2010-07-24  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Generic translator texi2any/makeinfo): rename
+	from "Generic converter", edit chapter intro.
+
+2010-07-24  Patrice Dumas  <pertusus@free.fr>
+
+	* doc/texinfo.txi (Initialization files basics): merge `Function 
+	prototypes' node.
+	Put 'Initializing and finalizing' below 'Initialization files 
+	basics'.
+	Add the information about @-commands formatting.
+
+2010-07-23  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (setfilename): more about TeX behavior.
+	(Invoking texi2any),
+	(Pointer Validation),
+	(HTML Splitting),
+	(HTML Xref Command Expansion),
+	(The different elements),
+	(Contents and Overview text):
+	English, examples, minor details.
+
+2010-07-23  Patrice Dumas  <pertusus@free.fr>
+
+	* texi2html/Tests: remove this unused directory tree.
+
+2010-07-23  Patrice Dumas  <pertusus@free.fr>
+
+	* doc/texinfo.txi (texi2any output customization): add the
+	general informations about initialization files and the document
+	layout.
+
+2010-07-21  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Invoking texi2any) <--conf-dir>: reformat.
+
+2010-07-19  Patrice Dumas  <pertusus@free.fr>
+
+	* texi2html/test/sectionning: rename to sectioning.
+	Also replace sectionning with sectioning in documentation 
+	files.
+
+2010-07-19  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (HTML Xref Link Preservation): new node
+	about the MANUAL-noderename.cnf file.
+
+2010-07-19  Patrice Dumas  <pertusus@free.fr>
+
+	* doc/texinfo.txi (Generic converter texi2any/makeinfo): add a
+	chapter for texi2any/makeinfo. Merge Invoking makeinfo and
+	makeinfo options and put it in the chapter as Invoking texi2any, 
+	together with Pointer Validation and the description of 
+	texi2any Configuration variables.
+
+2010-07-18  Karl Berry  <karl@gnu.org>
+
+	* AUTHORS, 
+	* INSTALL,
+	* NEWS,
+	* README,
+	* TODO: update for texi2html.
+	* makeinfo/README: update for obsolescence.
+
+2010-07-18  Patrice Dumas  <pertusus@free.fr>
+
+	* doc/texinfo.txi (makeinfo options): re-add --commands-in-node-names
+	and explain that it is a no-op.
+	* texi2html/texi2html.pl: re-add --commands-in-node-names and 
+	--output-indent in the help message, stating that they are no-op.
+
+2010-07-17  Patrice Dumas  <pertusus@free.fr>
+
+	* doc/texinfo.txi (setfilename): explain how file name is determined
+	when there is no @setfilename.
+	(makeinfo options, HTML Translation): document new options and 
+	update according to the changes in behaviour.
+	Separate --plaintext from --no-headers.
+	(Pointer Validation): @-commands in nodes are now supported.
+
+2010-07-16  Patrice Dumas  <pertusus@free.fr>
+
+	* makeinfo/Makefile.am (noinst_PROGRAMS): no more installation
+	of C makeinfo via bin_PROGRAMS.
+
+2010-07-11  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (frenchspacing): no double space after
+	semicolons, just at end of sentences.
+	Report from Tim Landscheidt, help-texinfo 07 Jul 2010 22:29:55.
+
+2010-06-24  gettextize  <bug-gnu-gettext@gnu.org>
+
+	* gnulib/m4/lib-link.m4: Upgrade to gettext-0.18.1.
+	* Makefile.am (SUBDIRS): New variable.
+	* configure.ac (AC_CONFIG_FILES): Add intl/Makefile.
+	(AM_GNU_GETTEXT_VERSION): Bump to 0.18.1.
+
+2010-06-23  Karl Berry  <karl@gnu.org>
+
+	* util/texi2dvi (test_local): redirect output away, to avoid
+	 local: not found
+	 on Solaris 10 et al.  Report from Nelson Beebe,
+	 23 Jun 2010 16:08:07.
+
+2010-06-21  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* doc/texinfo.txi (Inserting a Comma): Quote meta-use of
+	@comma{} in running text.
+
+2010-06-21  Karl Berry  <karl@gnu.org>
+
+	* util/gendocs.sh: 2010.
+
+2010-06-20  Karl Berry  <karl@gnu.org>
+
+	* util/gendocs.sh (usage): mention TEXI2HTML envvar.
+
+	* doc/texinfo.txi (Invoking Macros): lament escape convention.
+
+2010-06-17  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\macroargctxt): set \catcode`\\=0, as a try
+	at supporting \\ \{ \} (but not \,) in macro args.
+	Report from Ralf W, Eric B, Patrice D, 	14 Jun 2010 23:48:39.
+
+2010-06-16  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\setupverbatim): restore wrongly-removed
+	\leavevmode, for sake of blank lines in verbatim environments.
+	Doc tweaks.
+
+2010-06-15  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\verbbox): use this for verbatim lines
+	instead of \box0, for clarity.
+	(\starttabbox): make \verbbox assignment global,
+	in case of verbatim lines starting with accents.
+
+2010-06-10  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\LaTeX): with 10pt running text, use
+	plain's \scriptsize (7pt) for the A in LaTeX.
+
+2010-05-22  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\indexlquoteignore): new macro.
+	(\indexnofonts): call it if @set txiindexlquoteignore.
+	This is for Free Software, Free Society, 2nd ed.
+	Perhaps it should be a general feature,
+	or settable on a per-entry basis.
+
+2010-05-17  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\marksupsetuplqsamp, \marksupsetuprqsamp):
+	assign as \markupsetcodequoteleft and ...right, so they respect
+	the @txicodequote... settings.
+	Request from Mark Polesky, 13 Apr 2010 09:46:23.
+	* doc/texinfo.txi (Inserting Quote Characters): document this.
+
+2010-05-14  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\makedispenvdef): rename from \makedispenv,
+	so everything ends with "def".
+	(\maketwodispenvdef): rename from \maketwodispenvs.  Change calls.
+	(\Esmallquotation): define to be the same as the real \Equotation.
+
+	* doc/texinfo.tex (\entrybreak): new non-command, to allow
+	forced line breaks in the toc (or index) separate from the
+	maintext.  For Jeanne.
+
+2010-05-08  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\shortpartentry): make bold, suggestion
+	from Jeanne R.
+
+2010-05-04  Jim Meyering  <meyering@redhat.com>
+
+	* util/gendocs.sh: make its "-s FILE" option more useful;
+	when honoring the -s FILE option, update
+	$PACKAGE to reflect the probably-different basename of "FILE".
+
+2010-04-23  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\,, \dotaccent, \tieaccents, \ubaraccent): use
+	\ptex... now that these commands are further down in the file.
+
+2010-04-22  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\indexdummies): define \{ and \} as before,
+	so they don't get expanded in writing the index.  Report
+	from Peter Breitenlohner.
+
+2010-04-18  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\@): use \char64 from the current font, instead
+	of forcing typewriter.
+	(\mylbrace, \mybrace): use braces from \ecfont, ditto.
+	Suggestion from Mark Polesky, 16 Apr 2010 22:24:07.
+
+2010-04-14  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\hbadness): increase to 6666, since we've used
+	that for various GNU publications.
+
+2010-04-04  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (part): new description for new command @part.
+	* doc/refcard/txirefcard.tex: add it.
+	* util/texinfo.dtd (part): new element.
+	
+	* doc/texinfo.tex (\entry): correct redefinition of @* for toc's.
+	(\definetextfontsizexi, \definetextfontsizex): reset \textleading,
+	\parskip appropriately, call \textfonts.
+
+2010-03-30  Karl Berry  <karl@gnu.org>
+
+	* util/texi2dvi (input_file_name_decode): use [A-Za-z] rather than
+	[A-z], which gets "invalid range end" with new grep in
+	en_US.utf8 and other UTF-8 locales.
+	Report from Martin von Gagern, 29 Mar 2010 12:34:09.
+
+2010-03-21  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\headingsoff): new macro to turn off all
+	headings/footings.
+	(\HEADINGSoff, \chapoddpage): use it.
+	
+	(\part, \partzzz): new command @part, always on an odd page.
+	(\numeralbox, \partentry, \shortpartentry): handle parts
+        in the tables of contents.
+	
+        (\entry): locally \let\* = \space, so explicit
+	line breaks in titles don't become line breaks in the toc's.
+	
+	(\flushright): need to \relax after glue assignment, lest
+	a following L disappear as part of filll glue.
+	
+	(\unmlevel): rename to \unnlevel.
+
+2010-03-18  Karl Berry  <karl@gnu.org>
+
+	* info/info.c,
+	* doc/info-stnd.texi: English wording.
+
+2010-03-18  Patrice Dumas  <pertusus@free.fr>
+
+	* info/nodes.c (info_node_of_file_buffer_tags),
+	* info.c,
+	* info.h,
+	* doc/info-stnd.texi: new switch --strict-node-location to avoid
+	being smart when searching for nodes.
+
+2010-03-17  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Copying Conditions): import better "free software"
+	description from the Emacs manual.
+
+	* doc/texinfo.txi (Info Format Specification): new appendix,
+	written by Patrice Dumas and me.
+
+	* doc/texinfo.txi (Include Files): move to near the end of the
+	main manual, instead of being an appendix.  These days, include
+	files are an important feature.  Remove @refill's.
+	(Catching Mistakes): rename chapter name to
+	match node name, since it is clearer.
+
+2010-03-09  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Menu Location): clarify that having the menu
+	at the end is a convention, not a requirement.
+
+2010-03-07  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\var): do not call \setupmarkupstyle; it's
+	 unused, and the } interferes with the automatic italic correction.
+
+2010-03-02  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\smartitaliccorrection): rename from
+	\smartitalicx.  Change calls.
+	(\dosmartslant): new macro, avoiding italic correction in \tt.
+	(\smartslanted, \smartitalic): use it.
+	Report from Mark Polesky, 1 Mar 2010 18:46:44.
+
+2010-02-21  Patrice Dumas  <pertusus@free.fr>
+
+	* po_document/: add translation of strings output in manuals
+	in this directory and support files copied for gettext.
+	* Makefile.am (SUBDIRS): add texi2html and po_document.
+	(dist-local): copy translation into texi2html directories.
+	* configure.ac (AM_INIT_AUTOMAKE): add tar-ustar because
+	there are long files in tests, and dist-zip because it was
+	done in texi2html.
+	(MKINSTALLDIRS): add since some gettext version may need it.
+	(PERL, USE_UNICODE, USE_EXTERNAL_EASTASIANWIDTH, USE_UNIDECODE,
+	USE_DATA_DUMPER, REQUIRE_DATA_DUMPER, t2h_po_dir, t2h_po_top_builddir,
+	USE_EXTERNAL_LIBINTL): add texi2html related conditionals.
+	* po/Makevars (XGETTEXT_OPTIONS): add perl keywords for texi2html
+	source files.
+	* po/POTFILES.in: add texi2html files.
+
+2010-02-14  Ben Pfaff  <blp@gnu.org>
+
+	* util/gendocs.sh: Use "($cmd)" in place of "$(cmd)" where
+	command substitution is not desired.
+
+2010-02-14  Ben Pfaff  <blp@gnu.org>
+
+	* util/gendocs.sh: Add "-s" option for specifying an alternate
+	Texinfo source file name.
+
+2010-02-13  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\tex): call \mathactive, so that the
+	math-active ' gets plain's definition to generate a prime, instead
+	of infinitely looping on the ' character.
+	Report from Brian Gough, 11 Feb 2010 10:54:24.
+
+2010-02-09  Karl Berry  <karl@gnu.org>
+
+	* util/texi2dvi (run_tex4ht): only run tex4ht if we're outputting
+	HTML.  Report from Wybo Dekker, 08 Feb 2010 11:53:58.
+
+2010-02-06  Karl Berry  <karl@gnu.org>
+
+	* util/texi2dvi (run_bibtex): ensure output from all greps
+	in chain are redirected, else undefined output from a LaTeX \cite
+	shows up even with --quiet.
+	From Wybo Dekker, 06 Feb 2010 13:33:48.
+	
+	* util/texi2dvi: untabify.
+
+2010-01-07  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Two Arguments): blank line consistency.
+
+2010-01-03  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (exampleindent): no longer ignored in HTML.
+	Report from Thomas Keller, 20 Nov 2009 07:59:41.
+
+2010-01-01  Robert Millan  <rmh.grub@aybabtu.com>  (tiny change)
+
+	* util/gendocs.sh: use `set -e'.
+
+2009-12-13  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Image Syntax): mention convention for installing
+	images for use by capable Info readers (i.e., Emacs Info).
+	Suggested by Jose Marchesi.
+
+2009-10-26  Roland Kaufmann  <roland.kaufmann@gmail.com>  (tiny change)
+
+	* util/texi2dvi (max-iterations): new option.
+
+2009-10-25  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Predefined Indices): insert @findex entries
+	for the indexing commands (cindex, findex, etc.).
+	From Kevin Ryde, 17 Oct 2009 10:03:14.
+
+	* info/filesys.c (compress_suffixes): use gzip -d in preference to
+	gunzip.  From Antonio Diaz Diaz, 22 Oct 2009 17:42:34.
+
+2009-10-08  Karl Berry  <karl@gnu.org>
+
+	* util/texi2dvi (catcode_special): default to maybe,
+	and only set to true for processing Texinfo, not LaTeX.
+	Request from Kurt Hornik, also Debian bug #534458.
+
+2009-09-09  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+        * build-aux/gendocs.sh: Fix copyright header to match GPLv3
+        recommendation.
+
+2009-09-04  Karl Berry  <karl@gnu.org>
+
+	* install-info/install-info.c (munge_old_style_debian_options):
+	malloc what we sprintf.
+	From Matt McCutchen, http://savannah.gnu.org/bugs/?27376.
+
+2009-08-14  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\rgbDarkRed, \rgbBlack): new macros, replacing
+	\cmykDarkRed and \cmykBlack.  Change uses.  Said to print
+	considerably better.
+	From: Andrew Hawryluk, 12 Aug 2009 21:22:06.`,
+
+2009-07-25  Oleg Katsitadze <olegkat@gmail.com>
+
+	* doc/texinfo.tex (\commondummiesnofonts): Added \email.
+
+2009-05-16  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\textdegree): output index sort string as `o',
+	since that's how we output it in Info.  Suggested by Patrice.
+
+2009-05-10  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (firstparagraphindent): mistaken
+	mention of @paragraphindent.  Report from Dilyan Palauzov,
+	10 May 2009 21:41:32.
+	(@@-Command Summary): forgot @firstparagraphindent{}.
+	* doc/refcard/txirefcard.tex: likewise.
+
+2009-05-06  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (@@-Command Summary): forgot @textdegree{}.
+	* doc/refcard/txirefcard.tex: likewise.
+
+2009-04-20  Akim Demaille  <akim@epita.fr>
+
+	* util/texi2dvi (run_tex): pdf output for texinfo is supported.
+
+2009-04-15  Akim Demaille  <akim@epita.fr>
+
+	texi2dvi: use texindy if available.
+	* util/texi2dvi (run_index): Use texindy if available.
+
+2009-04-15  Akim Demaille  <akim@epita.fr>
+
+	texi2dvi: initial support for tex4ht.
+	* util/texi2dvi ($latex2html, --tex4ht, run_tex4ht, destdir): New.
+	(run_tex): Accept an HTML output.
+	(run_tex_suite): Call run_tex4ht.
+	Install the output if needed.
+	(insert_command): Compute $textra_cmd only if needed.
+	If needed, add a \usepackage{tex4ht}.
+	(run_core_conversion): When using tex4ht, use latex.
+	(run_index): Adjust for tex4ht.
+
+2009-04-15  Akim Demaille  <akim@epita.fr>
+
+	texi2dvi: make $expand a regular Boolean variable.
+	* util/texi2dvi ($expand): Use true/false instead of t/''.
+
+2009-04-15  Akim Demaille  <akim@epita.fr>
+
+	texi2dvi: fix comments.
+	* util/texi2dvi: here.
+
+2009-04-15  Akim Demaille  <akim@epita.fr>
+
+	texi2dvi: simplify move_to_dest.
+	* util/texi2dvi (move_to_dest): Exit immediately if there is
+	nothing to do.
+	This allows to simplify the body of the loop, as we no longer have
+	to check whether something has to be done.
+	Don't build-and-then-split $dest, just build the split components.
+	$dest is no longer needed.
+
+2009-04-15  Akim Demaille  <akim@epita.fr>
+
+	texi2dvi: avoid creating invisible temporary files.
+	* util/texi2dvi ($t2ddir): Strip leading `./'.
+	Call sed once.
+
+2009-04-15  Akim Demaille  <akim@epita.fr>
+
+	texi2dvi: complete --help.
+	* util/texi2dvi (usage): Document --html.
+
+2009-04-15  Akim Demaille  <akim@epita.fr>
+
+	texi2dvi: fix error invocations.
+	* util/texi2dvi: error already reports $0, don't do it again.
+
+2009-04-15  Akim Demaille  <akim@epita.fr>
+
+	texi2dvi: simplify the handling of --no-line-error.
+	* util/texi2dvi (no_line_error): Remove, rather use
+	line_error=false.
+	(run_tex): Adjust.
+	By the way, don't call tex --help if !$line_error.
+
+2009-04-15  Akim Demaille  <akim@epita.fr>
+
+	texi2dvi: be robust to a failing latex --help.
+	* util/texi2dvi (run_tex): here.
+
+2009-04-15  Akim Demaille  <akim@epita.fr>
+
+	* util/texi2dvi (out_lang_set): New.
+	Use it.
+	(usage): Document --html, --info, --text, --ps, DVIPS and DVIPDF.
+	(run_tex_suite): Honor DVIPS.
+	(main): Support -O/--output-format.
+	Undocumented for now.
+
+2009-04-15  Akim Demaille  <akim@epita.fr>
+
+	* util/texi2dvi (ensure_dir): Die only if we could not create the
+	directory at all.
+
+2009-04-12  Karl Berry  <karl@gnu.org>
+
+	* util/texi2dvi (compile): do not create a wrong :: sequence
+	in the middle of the path due to an empty txincludes (no -I's).
+	Report from Bruno Haible, 8 Apr 2009 01:24:09.
+
+	* util/texi2pdf,
+	* util/pdftexi2dvi: handle --version to hardwire the program name.
+	* util/texi2dvi (usage): mention PDF output.
+
+2009-03-29  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (Local Variables): nuke-trailing-whitespace, to
+	appease gnulib.
+
+2009-03-28  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (GNU Sample Texts): no literal copyright symbol;
+	plus other typos and updates reported by Arni Magnusson.
+
+2009-03-28  Christopher Faylor  <me+cygwin@cgf.cx>  (tiny change)
+
+	* system.h: Avoid erroneously redefining PIPE_USE_FORK when compiling
+	for Cygwin.
+
+2009-03-25  Arni Magnusson  <arnima@hafro.is>
+
+	* doc/txi-is.tex: use \'{\dotless{i}} and bls.{}.
+
+2009-03-22  Karl Berry  <karl@gnu.org>
+
+	* doc/txi-is.tex: call \txisetlanguage to support hyphenation.
+
+2009-03-22  Oleg Katsitadze <olegkat@gmail.com>
+
+	* doc/texinfo.tex (\documentlanguagetrywithoutunderscore):
+	Defined it with the same catcode of _ as in \documentlanguage.
+
+2009-03-22  Oleg Katsitadze <olegkat@gmail.com>
+
+	* doc/texinfo.tex (\chapterzzz, \appendixzzz, \chapmacro):
+	(\sectionheading):  Be careful not to expand \putwordChapter,
+	\putwordSection and \putwordAppendix unnecessarily, because some
+	of the translations contain complex macros to typeset non-latin
+	glyphs.  Report from Arni Magnusson, 18 Mar 2009 22:58:25.
+
+2009-03-21  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\commondummies, \indexnofonts): handle
+	\DH \dh \TH \th.
+
+2009-03-20  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\DH, \dh, \TH, \TH): new macros for Icelandic
+	letters eth and thorn.
+	(\latonechardefs, \lattwochardefs, \utfeightchardefs): use them.
+	* doc/texinfo.txi (Inserting Accents),
+	* doc/refcard/txirefcard.tex: document them.
+
+2009-03-20  Arni Magnusson  <arnima@hafro.is>
+
+	* doc/txi-is.tex: Icelandic translation for texinfo.tex.
+
+2009-03-16  Karl Berry  <karl@gnu.org>
+
+	* doc/info-stnd.texi, doc/info.texi: update to GFDLv1.3+.
+
+2009-03-15  Karl Berry  <karl@gnu.org>
+
+	* util/texi2dvi (run_tex): allow ~ in top-level filename.
+	in tidy mode, also make the clean dirname link if a ~ is present.
+	Continuing report from Norbert Preining, 13 Mar 2009 14:18:11,
+	Debian bug#487974.
+
+2009-03-14  Karl Berry  <karl@gnu.org>
+
+	* info/filesys.c (compress_suffixes): add .xz/unxz.
+
+	* info/filesys.h (DEFAULT_INFOPATH): include PATH by default.
+
+2009-03-14  Peter Breitenlohner  <peb@mppmu.mpg.de>
+
+	* info/filesys.c (build_infopath_from_path): new fn.
+	(info_add_path): if INFOPATH includes the word "PATH",
+	call the new fn.
+	* doc/info-stnd.texi (Invoking Info) <directory-path>: document it.
+
+2009-02-07  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.txi (Not Ending a Sentence): also mention ).
+
+2009-01-31  Karl Berry  <karl@gnu.org>
+
+	* autogen.sh: No need for --enable-maintainer-mode any more.
+
+2009-01-23  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	Fix behavior of info on invalid regular expressions.
+
+	* info/search.h (search_result): New enum.
+	(search, regexp_search):
+	(search_forward, search_backward): Return enum search_result.
+	* info/search.c (search, regexp_search):
+	(search_forward, search_backward): Return enum search_result.
+	All callers updated.
+	* info/session.c (info_search_in_node_internal): Return enum
+	search_result. All callers updated.
+	(info_search_internal): Stop immediately if the search returns
+	search_failure. This happens if the user specified an invalid
+	regular expression.
+
+	* info/dir.c, info/info-utils.c, info/man.c, info/nodes.c: Update
+	uses of search functions.
+
+2009-01-18  Karl Berry  <karl@gnu.org>
+
+        * doc/texinfo.tex (\headitemfont): new macro, synonym for @b.
+	* doc/texinfo.txi (Multitable Rows): document @headitemfont.
+	Suggestion from wl, 21 Oct 2008 09:02:51.
+
+	* doc/texinfo.tex (\doitemize): try typesetting the item mark,
+	in case the user erroneously said @itemize @samp, to give an error
+	earlier.  Report from Bruce Korb, help-texinfo 02 Nov 2008 10:38:30.
+	* doc/texinfo.txi (itemize): document that @w{} (with the braces)
+	must be used to get an empty item mark.  (Clearly no one had
+	actually done this.)
+
+	* doc/texinfo.txi (Indexing Commands): document that index
+	commands should precede the indexed material.
+
+	* doc/txirefcard.tex: update copyright date.
+
+	* doc/texinfo.txi (@raggedright): minor tweaks.
+	(Quotations and Examples): likewise.
+
+	* doc/texinfo.txi (@copying): update to FDL 1.3+.
+	* doc/fdl.texi: likewise.
+
+	* texinfo.txi (page): Document that this causes a paragraph
+	break in non-TeX.
+
+2009-01-05  Oleg Katsitadze  <olegkat@gmail.com>
+
+	* doc/texinfo.txi (\key): Removed spurious space.  Patch from
+	Werner Lemberg, 05 Jan 2009 11:20:08.
+
+2009-01-02  Oleg Katsitadze  <olegkat@gmail.com>
+
+	* doc/texinfo.txi:  Removed documentation of @raggedleft and
+	@raggedcenter.
+	* doc/refcard/txirefcard.tex:  Updated.
+
+2009-01-01  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\pdfurl): make \var be a dummy, so
+	@email{foo-@var{pkg}} works.
+
+	* util/gendocs.sh: accept --email option, replace %%EMAIL%% in
+		templates.
+	* util/gendocs_template,
+	* util/gendocs_template_min: use %%EMAIL%%.
+	Update all for 2009.
+
+2008-12-31  Oleg Katsitadze  <olegkat@gmail.com>
+
+	* doc/texinfo.tex (@raggedright, @raggedleft, @raggedcenter):  New
+	commands.
+	* makeinfo/cmds.c, makeinfo/cmds.h, makeinfo/insertion.c:
+	* makeinfo/insertion.h:
+	Likewise.
+	* doc/texinfo.txi:  Updated documentation.
+	* doc/refcard/txirefcard.tex:  Updated.
+
+2008-12-29  Karl Berry  <karl@gnu.org>
+
+	* info/window.c (process_node_text): use size_t for mb variables
+	mbi_cur_ptr and mb_len.
+	Report from Mutsaers Peter, 29 Dec 2008 17:24:53.
+
+2008-12-16  Oleg Katsitadze  <olegkat@gmail.com>
+
+	* doc/texinfo.tex (\nonfillstart): emulate the normal @indent in
+	the non-fill environments (@example, @display, @format,
+	@flushleft, @flushright, @verbatim).  Report from wl.
+
+2008-12-16  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\sectionheading): force vertical mode before
+	the first whatsit.  Report from wl.
+
+2008-12-15  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\pdfsetcolor): also set the PDF color for
+	stroking, used for thin-enough rules, e.g., normal _'s.
+	Report from wl.
+
+2008-12-13  Werner Lemberg  <wl@gnu.org> and
+	    Karl Berry  <karl@gnu.org>
+
+	* util/texi2dvi (uncomment_iftex): ignore repeated @c texi2dvi's,
+	thus supporting
+	  @iftex
+	  @tex
+	  ...
+	  @end tex
+	  @end iftex
+       with `texi2dvi -E'.  bug-texinfo mail of 22 Nov 2008 17:01:49.
+       Also use @c _texi2dvi instead of @c texi2dvi to reduce conflicts.
+       * doc/texinfo.txi (Format with texi2dvi): mention that the
+       source document cannot have a line starting with @c _texi2dvi.
+
+2008-12-03  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\safewhatsit): undo change of 2008-11-25;
+	clearly \unskip is wrong, because then normal interword glue
+	before an @ref, for example, is removed.  Report from wl.
+
+2008-11-27  Karl Berry  <karl@gnu.org>
+
+	* configure.ac (AM_MAINTAINER_MODE): I am removing Texinfo
+	from TeX Live, since it's almost always available outside TL
+	anyway.  Therefore no more need for maintainer mode.
+	* README.dev: remove --enable-maintainer-mode from example.
+	* util/Makefile.am [MAINTAINER_MODE]: comment out the
+        tests, instead of using the Automake conditional, since
+        we don't want maintainer mode any more.  We'll be able to revert
+        this in Automake 1.11.
+
+	* doc/texinfo.tex: move markup infrastructure to new markup
+	page; create new glyphs page for glyphs; etc.  No intended
+	functional changes.
+
+	* doc/texinfo.tex (\key): do not uppercase the argument; this
+	was evidently inserted by mistake in an Automake update (1.222).
+	The Emacs manual uses @key with mixed-case arguments, as it should.
+	Also, use \tt if the current font is not already monospace.
+
+	Also, comment out the definition of \key which produces a lozenge
+	around the key name.  This hasn't been active for a long time,
+	and doesn't adjust to the text size.
+
+2008-11-26  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* util/texi2dvi (move_to_dest): Quote file names consistently.
+
+2008-11-25  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\safewhatsit) [\ifhmode]: \unskip, to avoid
+	possible spurious blank line.  Report from Dave Luttinen,
+	24 Nov 2008 01:20:21.
+	(\pdfmkdest) [! \ifpdf]: also \unskip in hmode, to try to
+	avoid output-format-dependent line breaking.
+
+2008-11-23  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (^^?): make a DEL a true TeX comment character,
+	since it is unused in any encoding.  wl, 22 Nov 2008 07:31:43.
+
+2008-11-17  Oleg Katsitadze  <olegkat@gmail.com>
+
+	* doc/texinfo.tex: Made left and right quote characters always
+	active, for arg parsing; suggestion from Reinhold Kainhofer, 25
+	Oct 2008 08:50:05.  Made @verb consistent with @verbatim by
+	honoring @set txicodequoteundirected.  Disabled the ?` and !`
+	ligatures in @samp and @kbd.
+	(\defmarkupstylesetup): New infrastructure for markup style setup.
+	Currently it's only used to set up quote chars.
+
+	* doc/texinfo.txi (Inserting Quote Characters):  Documented @verb
+	as being affected by @set txicodequoteundirected.
+
+2008-11-11  Karl Berry  <karl@gnu.org>
+
+	* NEWS, po/LINGUAS: new translation id
+	* po/id.po: .
+
+2008-11-10  Karl Berry  <karl@gnu.org>
+
+	* ChangeLog, NEWS, doc/texinfo.txi, doc/version.texi,
+	* makeinfo/cmds.c:
+	document @ogonek, finish documenting quote cmds
+
+2008-11-10  Karl Berry  <karl@gnu.org>
+
+	* makeinfo/cmds.c (command_table): add ogonek with a trivial
+	definition just so we can run the manual.
+	* doc/texinfo.txi (@-Command Summary): add ogonek and quote cmds.
+	(Inserting Accents): add ogonek.
+	* doc/refcard/txirefcard.tex: add ogonek and quote cmds.
+
+2008-11-09  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\rmisbold): new macro.
+	(\titlefont, \title, \chapheadingzzz, \chapmacro, \chapoddpage,
+	\centerchfopen, \sectionheading): callit.
+
+	(\author): just call \secfonts instead of faking authorrm,etc.
+	(\authorrm, \authortt, \authorfont): remove.
+
+	(\ogonek): find [AaEe] precomposed glyphs.
+	(\commondummiesnofonts): add \ogonek.
+	(\utfeightchardefs, \lattwochardefs): switch to using \ogonek.
+	Also support {left,right}-pointing double angle quotation(s)
+	with guillemets; missed those earlier.
+
+2008-11-07  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\ogonek, \Aogonek, \aogonek, \Eogonek, \eogonek):
+	new macros using ogonek from the EC fonts.
+	(\utfeightchardefs, \lattwochardefs): use them.
+
+2008-11-04  Arkadiusz Miskiewicz  <arekm@maven.pl>  (tiny change)
+
+	* makeinfo/sectioning.c (current_chapter_number): leave room for null.
+	bug-texinfo mail of 3 Nov 2008 23:09:46.
+
+2008-11-02  Karl Berry  <karl@gnu.org>
+
+	* util/texinfo.dtd (block): add smallquotation.
+
+2008-10-28  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\codequoteleft): disable `! and `? ligatures
+	for Spanish punctuation.
+
+2008-10-25  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\quotationstart): new macro.
+	(\quotation): call it.
+	(\smallquotation): new env.
+	(\Esmallquotation): new macro.
+	Patch from Werner Lemberg, 21 Oct 2008 16:05:27.
+
+	* doc/texinfo.txi (quotation, small, summary): update documentation,
+	* doc/refcard/txirefcard.tex: update.
+
+2008-10-20  Oleg Katsitadze  <olegkat@gmail.com>
+
+	* doc/texinfo.tex (\includezzz, \doverbatiminclude):  Better fix
+	to allow @-commands in file names, as set up by \indexnofonts.
+	help-texinfo request from David Bateman, 13 Oct 2008 15:58:07.
+
+2008-10-16  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\documentlanguage): read the txi-LL.tex file
+	with \globaldefs=1 in effect.
+	* doc/txi-LL.tex: set nonfrenchspacing (English and Portuguese) or
+	frenchspacing (everything else), based on Babel's settings.
+	Suggestion from Werner Lemberg, 15 Oct 2008 22:07:38.
+
+2008-10-15  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\doverbatiminclude): special-case \@,
+	so @@ can be used in the filename.
+	help-texinfo request from David Bateman, 13 Oct 2008 15:58:07.
+
+2008-10-12  Karl Berry  <karl@gnu.org>
+
+	* doc/texinfo.tex (\dosynindex): \ifx\csname...\endcsname
+	has to compare to \relax, not \undefined.
+
+	* doc/texinfo.tex (\txisetlanguage): new helper macro for the
+	txi-??.tex files.
+	* doc/txi-??.tex: add call to all files to set hyphenation
+	patterns (if they are available) and hyphenmin values.
+
+2008-10-09  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	* info/session.c (internal_next_line): New function.  A safer
+	version of info_next_line, which ensures that the references work
+	correctly on malformed info documents (such as gawk.info v. 3.1.5).
+
+2008-10-05  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	* info/display.c (display_update_one_window): Remove superfluous
+	call to	fflush.
+	* info/session.c (set_window_pagetop): Disable scrolling if the
+	amount to scroll is one line.  This prevents status line
+	blinking.
+
+	* info/info-utils.c (info_parse_node): Correctly handle nested
+	parentheses.
+	* info/nodes.c (info_get_node): If no file buffer is found, try to
+	load man page.  Report an error if that fails as well.
+
+2008-09-26  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	* makeinfo/sectioning.c (get_sectioning_number): Use
+	getdocumenttext to translate 'Appendix' heading.
+
 2008-09-18  Karl Berry  <karl@tug.org>
 
 	* Version 4.13.
@@ -63,7 +4657,7 @@
 2008-07-27  Karl Berry  <karl@tug.org>
 
 	* pretest 4.12.93.
-	
+
 	* gnulib: import memmem.
 
 2008-07-07  Karl Berry  <karl@gnu.org>
@@ -381,7 +4975,7 @@
 
 	* Version 4.12.
 
-2008-04-19  Per Øyvind Karlsen  <peroyvind@mandriva.org>  (tiny change)
+2008-04-19  Per \O{}yvind Karlsen  <peroyvind@mandriva.org>  (tiny change)
 
 	* info/filesys.c (compress_suffices): decompress .lzma with unlzma.
 	* install-info/install-info.c: support lzma.
@@ -628,7 +5222,7 @@
 2008-02-28  Akim Demaille  <akim@epita.fr>
 
 	Let texi2dvi keep the trailing //.
-	* bin/texi2dvi ($space, $tab): New.
+	* util/texi2dvi ($space, $tab): New.
 	($IFS): Use them to be robust to zealous white space cleanups.
 	(absolute): Preserve the trailing slashes.
 	(tex_envvars): Add MPINPUTS, MFINPUTS, and TFMFONTS.
@@ -2962,7 +7556,7 @@
 	makeinfo/lang.c, makeinfo/macro.c, makeinfo/multi.c,
 	makeinfo/node.c, makeinfo/xml.c: More bounds checking.
 
-2005-05-09  Andreas Vögele  <voegelas@gmx.net>  (tiny change)
+2005-05-09  Andreas V\"ogele  <voegelas@gmx.net>  (tiny change)
 
 	* makeinfo/multi.c (output_multitable_row): don't look past
 		beginning of cell memory.  bug-texinfo mail,
@@ -3494,7 +8088,7 @@
 	* makeinfo/texinfo.dtd (Inline.fonts): add it; also slanted.
 	* makeinfo/xml.h (SANSSERIF, SLANTED): define these new elements.
 	* makeinfo/xml.c (texinfoml_element_list): add them.
-	From: Frank Küster, 21 Oct 2004 23:27:33 +0200, Debian bug#277754.
+	From: Frank K\"uster, 21 Oct 2004 23:27:33 +0200, Debian bug#277754.
 
 	* doc/texinfo.txi (Quotations and Examples, end titlepage): state
 	that there must be only one space between the @end and its
@@ -8245,7 +12839,7 @@
 2003-07-14    <karl@gnu.org>
 
 	* util/install-info.c (ensure_dirfile_exists): replace literal ^_ with
-	\x1f.  Report from Trond Endrestøl
+	\x1f.  Report from Trond Endrest\o{}l
 	<trond@ramstind.gtf.ol.no>, 14 Jul 2003 13:31:29 +0200.
 
 	* makeinfo/sectioning.c (sectioning_html): forgot to change closing </hN>
@@ -8310,7 +12904,8 @@
 	* version 4.6.
 
 
-Copyright 2003, 2004, 2005, 2006, 2007, 2008 Free Software Foundation, Inc.
+Copyright 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013
+Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification,
 are permitted in any medium without royalty provided the copyright

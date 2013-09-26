@@ -1,8 +1,8 @@
 /* filesys.c -- filesystem specific functions.
-   $Id: filesys.c,v 1.12 2008/06/11 09:55:42 gray Exp $
+   $Id: filesys.c 5337 2013-08-22 17:54:06Z karl $
 
-   Copyright (C) 1993, 1997, 1998, 2000, 2002, 2003, 2004, 2007, 2008
-   Free Software Foundation, Inc.
+   Copyright 1993, 1997, 1998, 2000, 2002, 2003, 2004, 2007, 2008, 2009, 2011,
+   2012, 2013 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -17,12 +17,13 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-   Written by Brian Fox (bfox@ai.mit.edu). */
+   Originally written by Brian Fox. */
 
 #include "info.h"
 
 #include "tilde.h"
 #include "filesys.h"
+#include "tag.h"
 
 /* Local to this file. */
 static char *info_file_in_path (char *filename, char *path);
@@ -30,7 +31,6 @@ static char *lookup_info_filename (char *filename);
 static char *info_absolute_file (char *fname);
 
 static void remember_info_filename (char *filename, char *expansion);
-static void maybe_initialize_infopath (void);
 
 typedef struct
 {
@@ -53,10 +53,17 @@ static char *info_suffixes[] = {
 };
 
 static COMPRESSION_ALIST compress_suffixes[] = {
+#if STRIP_DOT_EXE
   { ".gz", "gunzip" },
+  { ".lz", "lunzip" },
+#else
+  { ".gz", "gzip -d" },
+  { ".lz", "lzip -d" },
+#endif
+  { ".xz", "unxz" },
   { ".bz2", "bunzip2" },
-  { ".lzma", "unlzma" },
   { ".z", "gunzip" },
+  { ".lzma", "unlzma" },
   { ".Z", "uncompress" },
   { ".Y", "unyabba" },
 #ifdef __MSDOS__
@@ -65,13 +72,6 @@ static COMPRESSION_ALIST compress_suffixes[] = {
 #endif
   { NULL, NULL }
 };
-
-/* The path on which we look for info files.  You can initialize this
-   from the environment variable INFOPATH if there is one, or you can
-   call info_add_path () to add paths to the beginning or end of it.
-   You can call zap_infopath () to make the path go away. */
-char *infopath = NULL;
-static int infopath_size = 0;
 
 /* Expand the filename in PARTIAL to make a real name for this operating
    system.  This looks in INFO_PATHS in order to find the correct file.
@@ -85,9 +85,9 @@ info_find_fullpath (char *partial)
   int initial_character;
   char *temp;
 
-  filesys_error_number = 0;
+  debug(1, (_("looking for file \"%s\""), partial));
 
-  maybe_initialize_infopath ();
+  filesys_error_number = 0;
 
   if (partial && (initial_character = *partial))
     {
@@ -138,7 +138,7 @@ info_find_fullpath (char *partial)
 	    partial = local_temp_filename;
         }
       else
-        temp = info_file_in_path (partial, infopath);
+        temp = info_file_in_path (partial, infopath ());
 
       if (temp)
         {
@@ -158,31 +158,28 @@ info_find_fullpath (char *partial)
 /* Scan the list of directories in PATH looking for FILENAME.  If we find
    one that is a regular file, return it as a new string.  Otherwise, return
    a NULL pointer. */
-static char *
-info_file_in_path (char *filename, char *path)
+char *
+info_file_find_next_in_path (char *filename, char *path, int *diridx)
 {
   struct stat finfo;
   char *temp_dirname;
-  int statable, dirname_index;
+  int statable;
 
   /* Reject ridiculous cases up front, to prevent infinite recursion
      later on.  E.g., someone might say "info '(.)foo'"...  */
   if (!*filename || STREQ (filename, ".") || STREQ (filename, ".."))
     return NULL;
 
-  dirname_index = 0;
-
-  while ((temp_dirname = extract_colon_unit (path, &dirname_index)))
+  while ((temp_dirname = extract_colon_unit (path, diridx)))
     {
       register int i, pre_suffix_length;
       char *temp;
 
+      debug(1, (_("looking for file %s in %s"), filename, temp_dirname));
       /* Expand a leading tilde if one is present. */
       if (*temp_dirname == '~')
         {
-          char *expanded_dirname;
-
-          expanded_dirname = tilde_expand_word (temp_dirname);
+          char *expanded_dirname = tilde_expand_word (temp_dirname);
           free (temp_dirname);
           temp_dirname = expanded_dirname;
         }
@@ -209,6 +206,7 @@ info_file_in_path (char *filename, char *path)
             {
               if (S_ISREG (finfo.st_mode))
                 {
+		  debug(1, (_("found file %s"), temp));
                   return temp;
                 }
               else if (S_ISDIR (finfo.st_mode))
@@ -223,6 +221,7 @@ info_file_in_path (char *filename, char *path)
                   if (newtemp)
                     {
                       free (temp);
+		      debug(1, (_("found file %s"), newtemp));
                       return newtemp;
                     }
                 }
@@ -242,13 +241,23 @@ info_file_in_path (char *filename, char *path)
 
                   statable = (stat (temp, &finfo) == 0);
                   if (statable && (S_ISREG (finfo.st_mode)))
-                    return temp;
+		    {
+		      debug(1, (_("found file %s"), temp));
+		      return temp;
+		    }
                 }
             }
         }
       free (temp);
     }
   return NULL;
+}
+
+static char *
+info_file_in_path (char *filename, char *path)
+{
+  int i = 0;
+  return info_file_find_next_in_path (filename, path, &i);
 }
 
 /* Assume FNAME is an absolute file name, and check whether it is
@@ -352,64 +361,21 @@ remember_info_filename (char *filename, char *expansion)
   names_and_files[names_and_files_index] = NULL;
 }
 
-static void
-maybe_initialize_infopath (void)
-{
-  if (!infopath_size)
-    {
-      infopath = (char *)
-        xmalloc (infopath_size = (1 + strlen (DEFAULT_INFOPATH)));
-
-      strcpy (infopath, DEFAULT_INFOPATH);
-    }
-}
-
-/* Add PATH to the list of paths found in INFOPATH.  2nd argument says
-   whether to put PATH at the front or end of INFOPATH. */
 void
-info_add_path (char *path, int where)
+forget_file_names (void)
 {
-  int len;
+  int i;
 
-  if (!infopath)
+  for (i = 0; i < names_and_files_index; i++)
     {
-      infopath = xmalloc (infopath_size = 200 + strlen (path));
-      infopath[0] = '\0';
+      free (names_and_files[i]->filename);
+      free (names_and_files[i]->expansion);
+      free (names_and_files[i]);
+      names_and_files[i] = NULL;
     }
-
-  len = strlen (path) + strlen (infopath);
-
-  if (len + 2 >= infopath_size)
-    infopath = xrealloc (infopath, (infopath_size += (2 * len) + 2));
-
-  if (!*infopath)
-    strcpy (infopath, path);
-  else if (where == INFOPATH_APPEND)
-    {
-      strcat (infopath, PATH_SEP);
-      strcat (infopath, path);
-    }
-  else if (where == INFOPATH_PREPEND)
-    {
-      char *temp = xstrdup (infopath);
-      strcpy (infopath, path);
-      strcat (infopath, PATH_SEP);
-      strcat (infopath, temp);
-      free (temp);
-    }
+  names_and_files_index = 0;
 }
-
-/* Make INFOPATH have absolutely nothing in it. */
-void
-zap_infopath (void)
-{
-  if (infopath)
-    free (infopath);
-
-  infopath = NULL;
-  infopath_size = 0;
-}
-
+
 /* Given a chunk of text and its length, convert all CRLF pairs at every
    end-of-line into a single Newline character.  Return the length of
    produced text.
@@ -450,22 +416,22 @@ convert_eols (char *text, long int textlen)
    If the file turns out to be compressed, set IS_COMPRESSED to non-zero.
    If the file cannot be read, return a NULL pointer. */
 char *
-filesys_read_info_file (char *pathname, long int *filesize,
-    struct stat *finfo, int *is_compressed)
+filesys_read_info_file (char *pathname, size_t *filesize,
+			struct stat *finfo, int *is_compressed)
 {
-  long st_size;
+  size_t fsize;
+  char *contents;
 
-  *filesize = filesys_error_number = 0;
+  fsize = filesys_error_number = 0;
 
   if (compressed_filename_p (pathname))
     {
       *is_compressed = 1;
-      return filesys_read_compressed (pathname, filesize);
+      contents = filesys_read_compressed (pathname, &fsize);
     }
   else
     {
       int descriptor;
-      char *contents;
 
       *is_compressed = 0;
       descriptor = open (pathname, O_RDONLY | O_BINARY, 0666);
@@ -478,31 +444,30 @@ filesys_read_info_file (char *pathname, long int *filesize,
         }
 
       /* Try to read the contents of this file. */
-      st_size = (long) finfo->st_size;
-      contents = xmalloc (1 + st_size);
-      if ((read (descriptor, contents, st_size)) != st_size)
+      fsize = (long) finfo->st_size;
+      contents = xmalloc (1 + fsize);
+      if ((read (descriptor, contents, fsize)) != fsize)
         {
 	  filesys_error_number = errno;
 	  close (descriptor);
 	  free (contents);
 	  return NULL;
         }
-
+      contents[fsize] = 0;
       close (descriptor);
-
-      /* Convert any DOS-style CRLF EOLs into Unix-style NL.
-	 Seems like a good idea to have even on Unix, in case the Info
-	 files are coming from some Windows system across a network.  */
-      *filesize = convert_eols (contents, st_size);
-
-      /* EOL conversion can shrink the text quite a bit.  We don't
-	 want to waste storage.  */
-      if (*filesize < st_size)
-	contents = xrealloc (contents, 1 + *filesize);
-      contents[*filesize] = '\0';
-
-      return contents;
     }
+
+  /* Convert any DOS-style CRLF EOLs into Unix-style NL.
+     Seems like a good idea to have even on Unix, in case the Info
+     files are coming from some Windows system across a network.  */
+  fsize = convert_eols (contents, fsize);
+
+  /* EOL conversion can shrink the text quite a bit.  We don't
+     want to waste storage.  */
+  contents = xrealloc (contents, 1 + fsize);
+  contents[fsize] = '\0';
+  *filesize = fsize;
+  return contents;
 }
 
 /* Typically, pipe buffers are 4k. */
@@ -512,7 +477,7 @@ filesys_read_info_file (char *pathname, long int *filesize,
 #define FILESYS_PIPE_BUFFER_SIZE (16 * BASIC_PIPE_BUFFER)
 
 char *
-filesys_read_compressed (char *pathname, long int *filesize)
+filesys_read_compressed (char *pathname, size_t *filesize)
 {
   FILE *stream;
   char *command, *decompressor;
@@ -538,7 +503,7 @@ filesys_read_compressed (char *pathname, long int *filesize)
 
       temp = xmalloc (5 + strlen (command));
       sprintf (temp, "%s...", command);
-      message_in_echo_area ("%s", temp, NULL);
+      message_in_echo_area ("%s", temp);
       free (temp);
     }
 #endif /* !BUILDING_LIBRARY */
@@ -549,7 +514,7 @@ filesys_read_compressed (char *pathname, long int *filesize)
   /* Read chunks from this file until there are none left to read. */
   if (stream)
     {
-      long offset, size;
+      size_t offset, size;
       char *chunk;
     
       offset = size = 0;
@@ -557,7 +522,7 @@ filesys_read_compressed (char *pathname, long int *filesize)
 
       while (1)
         {
-          int bytes_read;
+          size_t bytes_read;
 
           bytes_read = fread (chunk, 1, FILESYS_PIPE_BUFFER_SIZE, stream);
 
@@ -581,9 +546,9 @@ filesys_read_compressed (char *pathname, long int *filesize)
 	}
       else
 	{
-	  *filesize = convert_eols (contents, offset);
-	  contents = xrealloc (contents, 1 + *filesize);
-	  contents[*filesize] = '\0';
+	  contents = xrealloc (contents, 1 + offset);
+	  contents[offset] = '\0';
+	  *filesize = offset;
 	}
     }
   else

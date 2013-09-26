@@ -1,8 +1,9 @@
 /* terminal.c -- how to handle the physical terminal for Info.
-   $Id: terminal.c,v 1.7 2008/06/11 09:55:43 gray Exp $
+   $Id: terminal.c 5337 2013-08-22 17:54:06Z karl $
 
-   Copyright (C) 1988, 1989, 1990, 1991, 1992, 1993, 1996, 1997, 1998,
-   1999, 2001, 2002, 2004, 2007, 2008 Free Software Foundation, Inc.
+   Copyright 1988, 1989, 1990, 1991, 1992, 1993, 1996, 1997, 1998,
+   1999, 2001, 2002, 2004, 2007, 2008, 2012, 2013
+   Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -17,7 +18,7 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-   Originally written by Brian Fox (bfox@ai.mit.edu). */
+   Originally written by Brian Fox. */
 
 #include "info.h"
 #include "terminal.h"
@@ -43,7 +44,7 @@ char PC;      /* Pad character */
 short ospeed; /* Terminal output baud rate */
 extern int tgetnum (), tgetflag (), tgetent ();
 extern char *tgetstr (), *tgoto ();
-extern void tputs ();
+extern int tputs ();
 #endif /* not HAVE_TERMCAP_H */
 #endif /* not HAVE_NCURSES_TERMCAP_H */
 
@@ -412,25 +413,21 @@ terminal_scroll_terminal (int start, int end, int amount)
 
   if (terminal_scroll_terminal_hook)
     (*terminal_scroll_terminal_hook) (start, end, amount);
-  else
+  else if (amount > 0)
     {
       /* If we are scrolling down, delete AMOUNT lines at END.  Then insert
          AMOUNT lines at START. */
-      if (amount > 0)
-        {
-          terminal_delete_lines (end, amount);
-          terminal_insert_lines (start, amount);
-        }
-
+      terminal_delete_lines (end, amount);
+      terminal_insert_lines (start, amount);
+    }
+  else
+    {
       /* If we are scrolling up, delete AMOUNT lines before START.  This
          actually does the upwards scroll.  Then, insert AMOUNT lines
          after the already scrolled region (i.e., END - AMOUNT). */
-      if (amount < 0)
-        {
-          int abs_amount = -amount;
-          terminal_delete_lines (start - abs_amount, abs_amount);
-          terminal_insert_lines (end - abs_amount, abs_amount);
-        }
+      int abs_amount = -amount;
+      terminal_delete_lines (start - abs_amount, abs_amount);
+      terminal_insert_lines (end - abs_amount, abs_amount);
     }
 }
 
@@ -572,7 +569,9 @@ terminal_initialize_terminal (char *terminal_name)
       ospeed = B9600;
   }
 # else
+#ifndef __MINGW32__
   ospeed = B9600;
+#endif
 # endif /* !TIOCGETP */
 #endif
 
@@ -663,7 +662,9 @@ struct termio original_termio, ttybuff;
 /* Buffers containing the terminal mode flags upon entry to info. */
 int original_tty_flags = 0;
 int original_lmode;
+#ifndef __MINGW32__
 struct sgttyb ttybuff;
+#endif
 
 #    if defined(TIOCGETC) && defined(M_XENIX)
 /* SCO 3.2v5.0.2 defines but does not support TIOCGETC.  Gak.  Maybe
@@ -758,7 +759,7 @@ terminal_prep_terminal (void)
 #  endif
 #endif
 
-#if !defined (HAVE_TERMIOS_H) && !defined (HAVE_TERMIO_H)
+#if !defined (HAVE_TERMIOS_H) && !defined (HAVE_TERMIO_H) && !defined(__MINGW32__)
   ioctl (tty, TIOCGETP, &ttybuff);
 
   if (!original_tty_flags)
@@ -819,9 +820,11 @@ terminal_prep_terminal (void)
   }
 #  endif /* TIOCGLTC */
 
+# ifndef __MINGW32__
   ttybuff.sg_flags &= ~ECHO;
   ttybuff.sg_flags |= CBREAK;
   ioctl (tty, TIOCSETN, &ttybuff);
+# endif
 #endif /* !HAVE_TERMIOS_H && !HAVE_TERMIO_H */
 }
 
@@ -846,9 +849,11 @@ terminal_unprep_terminal (void)
 #  if defined (HAVE_TERMIO_H)
   ioctl (tty, TCSETA, &original_termio);
 #  else /* !HAVE_TERMIO_H */
+#   ifndef __MINGW32__
   ioctl (tty, TIOCGETP, &ttybuff);
   ttybuff.sg_flags = original_tty_flags;
   ioctl (tty, TIOCSETN, &ttybuff);
+#   endif
 
 #  if defined (TIOCGETC)
   ioctl (tty, TIOCSETC, &original_tchars);
@@ -867,6 +872,6 @@ terminal_unprep_terminal (void)
   terminal_end_using_terminal ();
 }
 
-#ifdef __MSDOS__
+#if defined(__MSDOS__) || defined(__MINGW32__)
 # include "pcterm.c"
 #endif
