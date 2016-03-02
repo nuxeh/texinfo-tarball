@@ -1,7 +1,8 @@
-# $Id: Makefile.am 5295 2013-08-10 15:33:48Z pertusus $
+# $Id: Makefile.am 6916 2016-01-03 20:46:04Z gavin $
 # Makefile.am for texinfo/tp.
 #
-# Copyright 2011, 2012, 2013 Free Software Foundation, Inc.
+# Copyright 2011, 2012, 2013, 2014, 2015, 2016 Free Software Foundation, 
+# Inc.
 #
 # This file is free software; as a special exception the author gives
 # unlimited permission to copy and/or distribute it, with or without
@@ -11,10 +12,10 @@
 # WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-# A long list of files that we generate and some rules.
+# Generated lists of tests and of test result files, and some rules.
 include $(srcdir)/Makefile.tres
 
-# Document string locale files and associated rules.
+# Generated list of document string locale files and associated rules.
 include $(srcdir)/Makefile.docstr
 
 $(srcdir)/Makefile.tres: maintain/regenerate_file_lists.pl
@@ -25,7 +26,16 @@ $(srcdir)/Makefile.docstr: maintain/regenerate_docstr.sh \
 	cd $(srcdir) \
 	&& $(SHELL) ./maintain/regenerate_docstr.sh "$@"
 
-SUBDIRS = . tests
+
+SUBDIRS =
+if ! DISABLE_XS
+SUBDIRS += Texinfo/Convert/XSParagraph
+endif
+
+SUBDIRS += . tests
+
+DIST_SUBDIRS = Texinfo/Convert/XSParagraph tests
+
 
 bin_SCRIPTS = texi2any
 
@@ -37,11 +47,13 @@ do_subst = sed \
   -e 's,[@]prefix[@],$(prefix),g' \
   -e 's,[@]datarootdir[@],$(datarootdir),g' \
   -e 's,[@]datadir[@],$(datadir),g' \
+  -e 's,[@]pkglibdir[@],$(pkglibdir),g' \
   -e 's,[@]PACKAGE[@],$(PACKAGE),g' \
   -e 's,[@]USE_EXTERNAL_LIBINTL[@],$(USE_EXTERNAL_LIBINTL),g' \
   -e 's,[@]USE_EXTERNAL_EASTASIANWIDTH[@],$(USE_EXTERNAL_EASTASIANWIDTH),g' \
   -e 's,[@]USE_EXTERNAL_UNIDECODE[@],$(USE_EXTERNAL_UNIDECODE),g' \
   -e 's,[@]TEXINFO_DTD_VERSION[@],$(TEXINFO_DTD_VERSION),g' \
+  -e 's,[@]enable_xs[@],$(enable_xs),g' \
   -e '1 s,/usr/bin/env perl,$(PERL),g'
 
 texi2any: texi2any.pl $(top_builddir)/config.status
@@ -61,6 +73,12 @@ dist_modules_DATA = \
  Texinfo/Structuring.pm \
  Texinfo/Documentlanguages.pm
 
+dist_noinst_DATA = \
+ Texinfo/ModulePath.pm.in
+
+modules_DATA = \
+ Texinfo/ModulePath.pm
+
 convertersdir = $(pkgdatadir)/Texinfo/Convert
 dist_converters_DATA = \
  Texinfo/Convert/Converter.pm \
@@ -72,6 +90,7 @@ dist_converters_DATA = \
  Texinfo/Convert/Line.pm \
  Texinfo/Convert/NodeNameNormalization.pm \
  Texinfo/Convert/Paragraph.pm \
+ Texinfo/Convert/ParagraphNonXS.pm \
  Texinfo/Convert/PlainTexinfo.pm \
  Texinfo/Convert/Plaintext.pm \
  Texinfo/Convert/Texinfo.pm \
@@ -146,10 +165,12 @@ test_files = \
  t/input_files/contents_no_section.texi \
  t/input_files/cpp_lines.texi \
  t/input_files/delcomment.texi \
+ t/input_files/east_asian_in_w.texi \
  t/input_files/empty_lines_at_beginning_no_setfilename.texi \
  t/input_files/empty_lines_at_beginning_no_setfilename_no_element.texi \
  t/input_files/japanese_utf8.texi \
  t/input_files/japanese_shift_jis.texi \
+ t/input_files/nodequote.texi \
  t/input_files/non_break_spaces.texi \
  t/input_files/sample_utf8.texi \
  t/input_files/things_before_setfilename_no_element.texi \
@@ -161,12 +182,11 @@ document_domain = $(PACKAGE)_document
 # $(document_strings_mo_files) and $(test_copied_include_files) come from
 # generated makefiles, Makefile.tres and Makefile.documents_strings_mo_files
 all-local: maintain/catalog.xml $(document_strings_mo_files) \
-           $(test_copied_include_files) 
+           $(test_copied_include_files)
 
 tp_tests = prove.sh
 
 if TP_TESTS
-#TESTS = $(tp_tests)
 TESTS = $(test_tap_files_generated_list)
 endif
 
@@ -175,7 +195,14 @@ T_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
                        $(top_srcdir)/build-aux/tap-driver.sh
 T_LOG_COMPILER = $(PERL)
 AM_T_LOG_FLAGS = -w
-AM_TESTS_ENVIRONMENT = srcdir="$(srcdir)"; export srcdir; top_srcdir="$(top_srcdir)"; export top_srcdir;
+AM_T_LOG_FLAGS += -ITexinfo/Convert/XSParagraph
+AM_T_LOG_FLAGS += -I$(srcdir)/Texinfo/Convert/XSParagraph
+
+AM_TESTS_ENVIRONMENT = srcdir="$(srcdir)"; export srcdir; top_srcdir="$(top_srcdir)"; export top_srcdir; builddir="$(builddir)"; export buildir; top_builddir="$(top_builddir)"; export top_builddir;
+
+# just a convenience for running these additional tests.
+long-checks:
+	cd tests && $(MAKE) long-checks
 
 maintenance_files = \
   maintain/all_tests.sh \
@@ -196,7 +223,6 @@ maintenance_files = \
 
 perl_specific_files = \
   Makefile.PL \
-  Changes \
   MANIFEST
 
 EXTRA_DIST = \
@@ -208,16 +234,27 @@ EXTRA_DIST = \
   $(perl_specific_files) \
   maintain/lib
 
+# MANIFEST is used for the Perl module.
+# maintain/MANIFEST_generated_files is used for dist(check).
+# They are made by maintain/prepare_perl_module_files.sh.
 MANIFEST: maintain/MANIFEST_generated_files Makefile.am Makefile.tres
 	LC_ALL=C; export LC_ALL; LANGUAGE=C; export LANGUAGE; \
 	echo "$(dist_modules_DATA) $(dist_converters_DATA)" \
 	"$(dist_debugmodules_DATA) $(dist_init_DATA)" \
 	"$(test_files) $(tp_tests) $(test_files_generated_list)" \
-	"texi2any README TODO COPYING" \
+	"texi2any README TODO COPYING $(modules_DATA)" \
 	"$(maintenance_files) $(perl_specific_files)" \
 	 | sed 's/  */\n/g' \
-	 | cat - $(srcdir)/maintain/MANIFEST_generated_files \
+	 | cat - $(srcdir)/maintain/MANIFEST_generated_files $(srcdir)/maintain/MANIFEST_XSParagraph_files \
 	 | sort >$@
+
+# template.pod is the basis for the .pm documentation, and the script
+# invoked here updates them; to be run when template.pod changes.
+# 
+# If we ever make that documentation more extensive, the .pm doc could
+# (and probably should) just be maintained separately, by hand.
+do-pm-doc:
+	./maintain/regenerate_converters_documentation.sh
 
 maintain/catalog.xml: maintain/catalog.xml.in Makefile
 	$(MKDIR_P) maintain
@@ -253,8 +290,8 @@ install-data-local:
 	fi
 
 install-exec-hook:
-	rm -f $(DESTDIR)$(bindir)/makeinfo
-	-$(LN_S) texi2any $(DESTDIR)$(bindir)/makeinfo
+	makeinfo_f=`echo makeinfo | sed -e '$(transform)'`; rm -f $(DESTDIR)$(bindir)/$$makeinfo_f
+	-makeinfo_f=`echo makeinfo | sed -e '$(transform)'`; texi2any_f=`echo texi2any| sed -e '$(transform)'`; $(LN_S) $$texi2any_f $(DESTDIR)$(bindir)/$$makeinfo_f
 
 dist-hook:
 	rm -rf `find $(distdir)/maintain/lib -name .svn`

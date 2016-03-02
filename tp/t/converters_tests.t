@@ -206,6 +206,7 @@ my $at_commands_in_refs_text = '@node Top
 * 8.27@dmn{in}::
 * @sansserif{sansserif} @slanted{slanted}::
 * @indicateurl{indicateurl}::
+* @sub{g}H 3@sup{rd}::
 * @url{http://somewhere_aaa} @url{url, text} @uref{/man.cgi/1/ls,,ls}::
 @end menu
 
@@ -290,6 +291,9 @@ my $at_commands_in_refs_text = '@node Top
 @node @indicateurl{indicateurl}
 @chapter @indicateurl{indicateurl}
 
+@node @sub{g}H 3@sup{rd}
+@chapter @sub{g}H 3@sup{rd}
+
 @node @url{http://somewhere_aaa} @url{url, text} @uref{/man.cgi/1/ls,,ls}
 @chapter @url{http://somewhere_aaa} @url{url, text} @uref{/man.cgi/1/ls,,ls}
 
@@ -325,6 +329,7 @@ my $at_commands_in_refs_text = '@node Top
 @ref{8.27@dmn{in}}
 @ref{@sansserif{sansserif} @slanted{slanted}}
 @ref{@indicateurl{indicateurl}}
+@ref{@sub{g}H 3@sup{rd}}
 @ref{@url{http://somewhere_aaa} @url{url, text} @uref{/man.cgi/1/ls,,ls}}
 
 @bye
@@ -979,7 +984,9 @@ undef, {'test_file' => 'sample_utf8.texi'}
 
 '.
 $at_commands_in_refs_text, 
-{}, {'TEST' => 1}], # TEST => 1 triggers @today constant expansion for diffs
+{'todo' =>
+   {'file_info' => 'different results from XS and pure Perl modules',
+  }}, {'TEST' => 1}], # TEST => 1 triggers @today constant expansion for diffs
 ['at_commands_in_refs_latin1',
 '@setfilename at_commands_in_refs_latin1.info
 @documentencoding ISO-8859-15

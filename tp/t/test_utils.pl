@@ -1,19 +1,48 @@
+# $Id: test_utils.pl 6791 2015-11-21 14:57:34Z gavin $
+# t/* test support for the Perl modules.
+#
+# Copyright 2010, 2011, 2012, 2013, 2014, 2015
+# Free Software Foundation, Inc.
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License,
+# or (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# 
+# Original author: Patrice Dumas <pertusus@free.fr>
+
 use strict;
 
 use 5.006;
 
-use Test::More;
+use File::Basename;
 use File::Spec;
-BEGIN { if (defined($ENV{'top_srcdir'})) {
-          my $lib_dir = File::Spec->catdir($ENV{'top_srcdir'}, 'tp', 'maintain');
-          unshift @INC, (File::Spec->catdir($lib_dir, 'lib', 'libintl-perl', 'lib'),
-                         File::Spec->catdir($lib_dir, 'lib', 'Unicode-EastAsianWidth', 'lib'),
-                         File::Spec->catdir($lib_dir, 'lib', 'Text-Unidecode', 'lib'));
-      }};
 
-use lib 'maintain/lib/Unicode-EastAsianWidth/lib/';
-use lib 'maintain/lib/libintl-perl/lib/';
-use lib 'maintain/lib/Text-Unidecode/lib/';
+BEGIN {
+
+if (!$ENV{'top_srcdir'}) {
+  my ($real_command_name, $command_directory, $command_suffix) 
+     = fileparse($0, '.pl');
+  my $updir = File::Spec->updir();
+
+  # tp/t -> tp/t/../..
+  $ENV{'top_srcdir'} = File::Spec->catdir($command_directory, $updir, $updir);
+}
+require Texinfo::ModulePath;
+Texinfo::ModulePath::init();
+
+} # end BEGIN
+
+use Test::More;
+
 use Texinfo::Parser;
 use Texinfo::Convert::Text;
 use Texinfo::Convert::Texinfo;
@@ -150,6 +179,8 @@ my %outfile_preamble = (
 <style type="text/css">
 <!--
 a.summary-letter {text-decoration: none}
+blockquote.indentedblock {margin-right: 0em}
+blockquote.smallindentedblock {margin-right: 0em; font-size: smaller}
 blockquote.smallquotation {font-size: smaller}
 div.display {margin-left: 3.2em}
 div.example {margin-left: 3.2em}
@@ -157,26 +188,25 @@ div.lisp {margin-left: 3.2em}
 div.smalldisplay {margin-left: 3.2em}
 div.smallexample {margin-left: 3.2em}
 div.smalllisp {margin-left: 3.2em}
-div.indentedblock {margin-left: 3.2em}
-div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
-pre.display {font-family: serif}
-pre.format {font-family: serif}
+kbd {font-style: oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
 pre.menu-comment {font-family: serif}
 pre.menu-preformatted {font-family: serif}
-pre.smalldisplay {font-family: serif; font-size: smaller}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
 pre.smallexample {font-size: smaller}
-pre.smallformat {font-family: serif; font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
 pre.smalllisp {font-size: smaller}
-span.nocodebreak {white-space:pre}
-span.nolinebreak {white-space:pre}
-span.roman {font-family:serif; font-weight:normal}
-span.sansserif {font-family:sans-serif; font-weight:normal}
+span.nocodebreak {white-space: nowrap}
+span.nolinebreak {white-space: nowrap}
+span.roman {font-family: serif; font-weight: normal}
+span.sansserif {font-family: sans-serif; font-weight: normal}
 ul.no-bullet {list-style: none}
 -->
 </style>
 </head>
 
-<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<body>
 ',
 '</body>
 </html>
@@ -636,6 +666,8 @@ sub debugcount($$$$$$;$)
   return ($errors, $result);
 }
 
+# Run a single test case.  Each test case is an array
+# [TEST_NAME, TEST_TEXT, PARSER_OPTIONS, CONVERTER_OPTIONS]
 sub test($$) 
 {
   my $self = shift;
@@ -652,6 +684,7 @@ sub test($$)
   $test_text = shift @$test_case;
   $parser_options = shift @$test_case if (@$test_case);
   $converter_options = shift @$test_case if (@$test_case);
+
   my $test_file;
   if ($parser_options->{'test_file'}) {
     $test_file = $input_files_dir . $parser_options->{'test_file'};
@@ -716,6 +749,9 @@ sub test($$)
   my $floats = $parser->floats_information();
 
   my $structure = Texinfo::Structuring::sectioning_structure($parser, $result);
+  if ($structure) {
+    Texinfo::Structuring::warn_non_empty_parts($parser);
+  }
 
   Texinfo::Structuring::number_floats($floats);
 
@@ -937,6 +973,7 @@ sub test($$)
       #print STDERR "$format: \n$converted{$format}";
       }
       if (defined($converted_errors{$format})) {
+        local $Data::Dumper::Sortkeys = 1;
         $out_result .= Data::Dumper->Dump([$converted_errors{$format}], 
                  ['$result_converted_errors{\''.$format.'\'}->{\''.$test_name.'\'}']) ."\n\n";
         #print STDERR "".Data::Dumper->Dump([$converted_errors{$format}]);
@@ -976,8 +1013,10 @@ sub test($$)
     ok (Texinfo::Convert::Texinfo::convert($result) eq $result_texis{$test_name}, 
          $test_name.' texi');
     if ($todos{'text'}) {
-      TODO: {
-        local $TODO = $todos{'text'};
+      #TODO: {
+        #local $TODO = $todos{'text'};
+      SKIP: {
+        skip $todos{'text'}, 1;
         ok ($converted_text eq $result_texts{$test_name}, $test_name.' text');
       }
     } else {
@@ -1005,8 +1044,10 @@ sub test($$)
             $tests_count += 1;
             my $errors = compare_dirs_files($reference_dir, $results_dir);
             if ($todos{$format}) {
-              TODO: {
-                local $TODO = $todos{$format};
+              #TODO: {
+              #  local $TODO = $todos{$format};
+              SKIP: {
+                skip $todos{$format}, 1;
                 ok (!defined($errors), $test_name.' converted '.$format)
                   or diag (join("\n", @$errors));
               }
@@ -1056,7 +1097,14 @@ sub test($$)
   return $tests_count;
 }
 
-# if a $test_case_name is given, only run that test.
+# Main entry point for the tests.
+#   $NAME - a string, name of test
+#   $TEST_CASES - array of sub-tests
+#   If $TEST_CASE_NAME is given, only run that test.
+#   $GENERATE means to generate reference test results (-g from command line).
+#   $DEBUG for debugging.
+# The $ARG_COMPLETE variable is the -c option, to create Texinfo files for the
+# test cases.
 sub run_all($$;$$$)
 {
   my $name = shift;
@@ -1101,6 +1149,7 @@ sub run_all($$;$$$)
   }
 }
 
+# Create a Texinfo file for a test case; used when -c option is given.
 sub output_texi_file($)
 {
   my $self = shift;

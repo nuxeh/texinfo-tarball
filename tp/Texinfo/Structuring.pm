@@ -1,7 +1,7 @@
 # Structuring.pm: extract informations about a document structure based on the 
 #                 document tree.
 #
-# Copyright 2010, 2011, 2012 Free Software Foundation, Inc.
+# Copyright 2010, 2011, 2012, 2013, 2014 Free Software Foundation, Inc.
 # 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,6 +43,7 @@ use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 # If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
 # will save memory.
 %EXPORT_TAGS = ( 'all' => [ qw(
+  add_missing_menus
   associate_internal_references
   complete_tree_nodes_menus
   elements_directions
@@ -61,6 +62,7 @@ use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
   split_by_node
   split_by_section
   split_pages
+  warn_non_empty_parts
 ) ] );
 
 @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
@@ -68,7 +70,7 @@ use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 @EXPORT = qw(
 );
 
-$VERSION = '5.1.90';
+$VERSION = '6.1';
 
 
 my %types_to_enter;
@@ -154,30 +156,7 @@ $unnumbered_commands{'top'} = 1;
 $unnumbered_commands{'centerchap'} = 1;
 $unnumbered_commands{'part'} = 1;
 
-my $min_level = $command_structuring_level{'chapter'};
-my $max_level = $command_structuring_level{'subsubsection'};
-
-sub _section_level($)
-{
-  my $section = shift;
-  my $level = $command_structuring_level{$section->{'cmdname'}};
-  # correct level according to raise/lowersections
-  if ($section->{'extra'} and $section->{'extra'}->{'sections_level'}) {
-    $level -= $section->{'extra'}->{'sections_level'};
-    if ($level < $min_level) {
-      if ($command_structuring_level{$section->{'cmdname'}} < $min_level) {
-        $level = $command_structuring_level{$section->{'cmdname'}};
-      } else {
-        $level = $min_level;
-      }
-    } elsif ($level > $max_level) {
-      $level = $max_level;
-    }
-  }
-  return $level;
-}
 # sets:
-# 'level'
 # 'number'
 # 'section_childs'
 # 'section_up'
@@ -220,8 +199,11 @@ sub sectioning_structure($$)
           $section_top = $content;
         }
       }
-      my $level = _section_level($content);
-      $content->{'level'} = $level;
+      my $level = $content->{'level'};
+      if (!defined($level)) {
+        warn "bug: level not defined for $content->{'cmdname'}\n";
+        $level = $content->{'level'} = 0;
+      }
 
       if ($previous_section) {
         # new command is below
@@ -249,7 +231,7 @@ sub sectioning_structure($$)
           }
         } else {
           my $up = $previous_section->{'section_up'};
-          my $new_upper_element;
+          my $new_upper_part_element;
           if ($previous_section->{'level'} != $level) {
             # means it is above the previous command, the up is to be found
             while ($up->{'section_up'} and $up->{'level'} >= $level) {
@@ -257,7 +239,7 @@ sub sectioning_structure($$)
             }
             if ($level <= $up->{'level'}) {
               if ($content->{'cmdname'} eq 'part') {
-                $new_upper_element = 1;
+                $new_upper_part_element = 1;
                 if ($level < $up->{'level'}) {
                   $self->line_warn(sprintf($self->__(
                     "no chapter-level command before \@%s"),
@@ -276,7 +258,7 @@ sub sectioning_structure($$)
               and $up->{'cmdname'} and $up->{'cmdname'} eq 'part') {
             $up = $up->{'section_up'};
           }
-          if ($new_upper_element) {
+          if ($new_upper_part_element) {
             # In that case the root has to be updated because the first 
             # 'part' just appeared
             $content->{'section_up'} = $sec_root;
@@ -437,11 +419,11 @@ sub fill_gaps_in_sectioning($)
       next;
     }
     my $current_section = shift @sections_list;
-    my $current_section_level = _section_level($current_section);
+    my $current_section_level = $current_section->{'level'};
     my $next_section = $sections_list[0];
     
     if (defined($next_section)) {
-      my $next_section_level = _section_level($next_section);
+      my $next_section_level = $next_section->{'level'};
       if ($next_section_level - $current_section_level > 1) {
         my @correct_level_offset_commands = _correct_level($next_section,
                                                           $contents[-1]);
@@ -494,6 +476,20 @@ sub fill_gaps_in_sectioning($)
     }
   }
   return (\@contents, \@added_sections);
+}
+
+sub warn_non_empty_parts($)
+{
+  my $self = shift;
+  my $global_commands = $self->global_commands_information();
+  if ($global_commands->{'part'}) {
+    foreach my $part (@{$global_commands->{'part'}}) {
+      if (!Texinfo::Common::is_content_empty($part)) {
+        $self->line_warn(sprintf($self->__("\@%s not empty"),
+                         $part->{'cmdname'}), $part->{'line_nr'});
+      }
+    }
+  }
 }
 
 sub _check_node_same_texinfo_code($$)
@@ -828,7 +824,8 @@ sub nodes_tree($)
     # and therefore $node->{'node_up'}->{'extra'}->{'manual_content'}.
     # The node_up should always be different from the menu_up, therefore
     # if in a menu, the second condition/error message applies.
-    if ($node->{'node_up'} and ($node->{'node_up'}->{'extra'}->{'manual_content'}
+    if ($self->{'SHOW_MENU'} and $node->{'node_up'} 
+        and ($node->{'node_up'}->{'extra'}->{'manual_content'}
          or !$node->{'menu_up_hash'}
          or !$node->{'menu_up_hash'}->{$node->{'node_up'}->{'extra'}->{'normalized'}})) {
       if (!$node->{'node_up'}->{'extra'}->{'manual_content'}) {
@@ -1667,6 +1664,44 @@ sub _new_block_command($$$)
   return $new_block;
 }
 
+sub add_node_menu_if_missing($$)
+{
+  my $self = shift;
+  my $node = shift;
+  
+  if (!$node->{'extra'}->{'associated_section'}->{'section_childs'}
+      or $node->{'menus'} and @{$node->{'menus'}}) {
+    return;
+  }
+
+  my @node_childs;
+  foreach my $child (@{$node->{'extra'}->{'associated_section'}->{'section_childs'}}) {
+    if ($child->{'extra'} and $child->{'extra'}->{'associated_node'}) {
+      push @node_childs, $child->{'extra'}->{'associated_node'};
+    }
+  }
+
+  if ($#node_childs+1 == 0) {
+    return;
+  }
+
+  my @pending;
+  for my $child (@node_childs) {
+    my $entry = _new_node_menu_entry($self, 
+                                     $child->{'extra'}->{'node_content'});
+    push @pending, $entry;
+  }
+
+  # Add a menu to this node
+  my $section = $node->{'extra'}->{'associated_section'};
+  my $current_menu = _new_block_command (\@pending, $section, 'menu');
+  push @{$section->{'contents'}}, $current_menu;
+  push @{$section->{'contents'}}, {'type' => 'empty_line',
+                                   'text' => "\n", 
+                                   'parent' => $section};
+  push @{$node->{'menus'}}, $current_menu;
+}
+
 sub complete_node_menu($$)
 {
   my $self = shift;
@@ -1763,6 +1798,25 @@ sub complete_node_menu($$)
         push @{$current_menu->{'contents'}}, @pending;
         push @{$current_menu->{'contents'}}, $end if ($end);
       }
+    }
+  }
+}
+
+# This should be called after sectioning_structure
+sub add_missing_menus($$)
+{
+  my $self = shift;
+  my $root = shift;
+  if (!$root->{'type'} or $root->{'type'} ne 'document_root'
+      or !$root->{'contents'}) {
+    return undef;
+  }
+  foreach my $content (@{$root->{'contents'}}) {
+    if ($content->{'cmdname'} and $content->{'cmdname'} eq 'node'
+        and (scalar(@{$content->{'extra'}->{'nodes_manuals'}}) == 1)
+        and $content->{'extra'} 
+        and $content->{'extra'}->{'associated_section'}) {
+      add_node_menu_if_missing($self, $content);
     }
   }
 }
@@ -1968,6 +2022,12 @@ sub _sort_index_entries($$)
   if ($res == 0) {
     $res = ($key1->{'number'} <=> $key2->{'number'});
   }
+  # This may happen if 2 indices are merged as the number is per 
+  # index name.  The @-command should be different though, for 
+  # index names to be different.
+  if ($res == 0) {
+    $res = ($key1->{'index_at_command'} cmp $key2->{'index_at_command'});
+  }
   return $res;
 }
 
@@ -1980,6 +2040,9 @@ sub _sort_index_entries_in_letter($$)
   my $res = ($a cmp $b);
   if ($res == 0) {
     $res = ($key1->{'number'} <=> $key2->{'number'});
+  }
+  if ($res == 0) {
+    $res = ($key1->{'index_at_command'} cmp $key2->{'index_at_command'});
   }
   return $res;
 }
@@ -2214,7 +2277,7 @@ up with nodes, floats or anchors with C<associate_internal_references>.
 It is also possible to group the top-level contents of the tree, which consist
 in nodes and sectioning commands into elements that group together a node and
 the next sectioning element.  With C<split_by_node> nodes are considered
-to be the main sectionning elements, while with C<split_by_section> the 
+to be the main sectioning elements, while with C<split_by_section> the 
 sectioning command elements are the main elements.  The first mode is typical
 of Info format, while the second correspond to a traditional book.
 The elements may be further split in I<pages>, which are not pages as
@@ -2331,6 +2394,10 @@ Verify that internal references (C<@ref> and similar without
 fourth of fifth argument) have an associated node, anchor or float.
 Set the I<label> key in the I<extra> hash of the reference tree
 element to the associated labeled tree element.
+
+=item warn_non_empty_parts($parser)
+
+Register a warning in C<$parser> for each C<@part> that is not empty.
 
 =item $elements = split_by_node($tree)
 
